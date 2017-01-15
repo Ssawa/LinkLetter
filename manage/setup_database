@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+prompt-user() {
+    while true
+    do
+        read -p "Continue (y/n)?" -n 1 -s choice
+        echo
+        case "$choice" in
+            y|Y ) return 0;;
+            n|N ) return 1;;
+        esac
+    done
+}
+
+execute-command() {
+    echo
+    echo "About to execute command: \"$@\""
+    if prompt-user ; then
+        $@
+    else
+        exit
+    fi
+}
+
+echo "This application uses Postgres to store it's data."
+echo
+echo "PostgreSQL (https://www.postgresql.org/) runs as a daemon on a machine, listening for TCP connections so that it can store and retrieve structured data using SQL."
+echo
+echo "It can be a bit of a pain to setup from scratch, unfortunately, so this might be a good opportunity to try out Docker (https://www.docker.com/)"
+echo
+echo "Docker can be a bit confusing itself but it serves a very powerful function. It can \"containerize\" multiple low-level installations of Linux onto your machine. This allows complete environments to run totally isolated of one another. As well as reducing program conflicts this also allows for the automated creation of environments, such as our PostgreSQL one."
+echo
+echo "This script attempts to install docker onto an OSX machine and then setup a Postgres container for use in this application. However, this is a complicated process, and this script can only account for so many contingencies, you may not even want to use docker, and that's fine! If you run across any issues with docker stuff you can always follow a more in depth tutorial here: https://docs.docker.com/docker-for-mac/, and if you want to just try installing Postgres on your regular machine you can look here: https://www.postgresql.org/download/macosx/. If you run into any problems you don't feel comfortable solving alone don't hesitate to reach out to the maintainers of this script (right now that's me, CJ DiMaggio)."
+echo
+
+if which docker > /dev/null ; then
+    echo "Okay, it looks like you already have docker installed. This might get complicated because there are roughly two versions of docker you can have on OSX. The latest version from https://docs.docker.com/engine/installation/mac/#/docker-for-mac, which uses xhyve for a cleaner application (this is what this script tries to install) and another version, typically installed via homebrew that uses VirtualBox to create a linux virtual machine and is a little more complicated. We'll try to do our best to make sure everything works for both cases but errs on the side of the latest installation, so if you see strange errors from the script, the reason may be because of discrepancies with this. Again, reach out to me if you have any trouble."
+else
+    echo "Okay, so let's start by installing Docker. The general process we'll follow is:"
+    echo
+    echo -e "\t*Download https://download.docker.com/mac/stable/Docker.dmg"
+    echo -e "\t*Mount this dmg"
+    echo -e "\t*Copy the Docker application to /Application"
+    echo -e "\t*Open the application"
+    echo -e "\t*Have you click a confirmation box"
+    echo "Don't worry, we'll show you every command we're about to run in case you ever want to do this yourself or if you want to audit what's going to be executing on your machine (you should!)"
+
+    if ! ls /tmp/script-docker.dmg > /dev/null ; then
+        execute-command "curl https://download.docker.com/mac/stable/Docker.dmg -o /tmp/script-docker.dmg"
+    fi
+
+    if ! ls /Volumes/Docker > /dev/null ; then
+        execute-command "hdiutil attach /tmp/script-docker.dmg"
+    fi
+
+    if ! ls /Applications/Docker* > /dev/null ; then
+        execute-command "cp -r /Volumes/Docker/Docker.app /Applications"
+    fi
+
+    execute-command "open /Applications/Docker.app/"
+
+    echo
+    echo "You may get a confirmation box now that requires your permission. Go ahead and click okay and then wait for docker to finish initializing (there should be a little whale icon in the top of the desktop that when you click on it says 'docker is running'). When you're ready to proceed, please hit enter."
+    read
+fi
+
+echo "Great, it looks like you have a version of docker setup! Let's go ahead and pull the postgres \"image\". A docker image is essentially just a template from which a new container can be spun up from. This particular one creates a linux environment with PostgreSQL running"
+execute-command "docker pull postgres"
+
+echo
+
+if ! docker ps | grep linkletter-postgres > /dev/null ; then
+    echo "Okay, we can now go ahead and actually create our container. What the following command does is start a new container named 'linkletter-posgress' using the 'postgres' image we just downloaded and then binds port 5432 of this new virtual envionment (which postgres talks over) to the non standard port 9753 (we bind to this port only so we don't conflict with anything else, and can easily be changed)"
+    execute-command "docker run --name linkletter-postgres -p 127.0.0.1:9753:5432 -d postgres"
+fi
+
+echo "And with that you should be all set! Be sure to read up on docker at https://docs.docker.com/engine/getstarted/ and postgres to figure out how to actually manage what you now have running. Or, just ask me!"
