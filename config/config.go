@@ -42,7 +42,8 @@ func GetEnvIntDefault(env string, defaultInt int) int {
 // and environment vairables and creates a Config object
 func ParseForConfig() Config {
 	conf := Config{
-		WebPort:     GetEnvIntDefault("LINKLETTER_WEBPORT", 8080),
+		// WebPort doesn't follow the LINKLETTER namespacing to be complacint with Heroku
+		WebPort:     GetEnvIntDefault("PORT", 8080),
 		SqlPort:     GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
 		SqlHost:     GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
 		SqlDB:       GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),

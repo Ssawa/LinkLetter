@@ -24,7 +24,7 @@ func TestGetEnvIntDefault(t *testing.T) {
 }
 
 func TestParseForConfig(t *testing.T) {
-	os.Setenv("LINKLETTER_WEBPORT", "7000")
+	os.Setenv("PORT", "7000")
 	os.Setenv("LINKLETTER_SQLHOST", "testhost")
 	os.Setenv("LINKLETTER_SQLDB", "testdb")
 
