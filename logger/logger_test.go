@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,4 +56,22 @@ func TestSetLogLevel(t *testing.T) {
 	SetLogLevel("ERROR")
 	Warning.Println("SUPRESSED?")
 	assert.Equal(t, "", *warningWritter.lastWritten)
+}
+
+func TestLogHTTPRequests(t *testing.T) {
+	debugWritter := TestingWriter{new(string)}
+	infoWritter := TestingWriter{new(string)}
+	warningWritter := TestingWriter{new(string)}
+	errorWritter := TestingWriter{new(string)}
+
+	InitLogging(debugWritter, infoWritter, warningWritter, errorWritter, 0)
+
+	mux := http.NewServeMux()
+	handler := LogHTTPRequests(Debug, mux)
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	resp := httptest.NewRecorder()
+
+	handler.ServeHTTP(resp, req)
+	assert.Contains(t, *debugWritter.lastWritten, "GET /test")
 }

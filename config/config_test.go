@@ -34,8 +34,8 @@ func TestParseForConfig(t *testing.T) {
 	os.Args = []string{os.Args[0], "-sqlDB", "override", "-sqlUser", "testuser"}
 	conf := ParseForConfig()
 
-	assert.Equal(t, 7000, conf.webPort)
-	assert.Equal(t, "testhost", conf.sqlHost)
-	assert.Equal(t, "override", conf.sqlDB)
-	assert.Equal(t, "testuser", conf.sqlUser)
+	assert.Equal(t, 7000, conf.WebPort)
+	assert.Equal(t, "testhost", conf.SqlHost)
+	assert.Equal(t, "override", conf.SqlDB)
+	assert.Equal(t, "testuser", conf.SqlUser)
 }

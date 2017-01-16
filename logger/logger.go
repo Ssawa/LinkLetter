@@ -4,22 +4,23 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 )
 
 var (
 	// Debug logs verbose messages for use in debugging
-	Debug *log.Logger
+	Debug = log.New(ioutil.Discard, "", 0)
 
 	// Info logs regular messages to keep track of status of application
-	Info *log.Logger
+	Info = log.New(ioutil.Discard, "", 0)
 
 	// Warning logs messages that might lead to disrupt behavior of the application
-	Warning *log.Logger
+	Warning = log.New(ioutil.Discard, "", 0)
 
 	// Error logs messages when things go very wrong and will screw up the application
-	Error *log.Logger
+	Error = log.New(ioutil.Discard, "", 0)
 )
 
 // InitLogging initializes variables for use in logging
@@ -48,4 +49,12 @@ func SetLogLevel(level string) {
 		Info.SetOutput(ioutil.Discard)
 		Warning.SetOutput(ioutil.Discard)
 	}
+}
+
+// LogHTTPRequests wraps an http handler to log every request that comes in
+func LogHTTPRequests(logger *log.Logger, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL)
+		handler.ServeHTTP(w, r)
+	})
 }

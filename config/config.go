@@ -9,12 +9,13 @@ import (
 // Config contains all the configurable data needed to run the
 // appliation
 type Config struct {
-	webPort     int
-	sqlPort     int
-	sqlHost     string
-	sqlDB       string
-	sqlUser     string
-	sqlPassword string
+	WebPort     int
+	SqlPort     int
+	SqlHost     string
+	SqlDB       string
+	SqlUser     string
+	SqlPassword string
+	SecretKey   string
 }
 
 // GetEnvStringDefault wraps os.Getenv to get an environment variable as a
@@ -41,20 +42,22 @@ func GetEnvIntDefault(env string, defaultInt int) int {
 // and environment vairables and creates a Config object
 func ParseForConfig() Config {
 	conf := Config{
-		webPort:     GetEnvIntDefault("LINKLETTER_WEBPORT", 8080),
-		sqlPort:     GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
-		sqlHost:     GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
-		sqlDB:       GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),
-		sqlUser:     GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
-		sqlPassword: GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
+		WebPort:     GetEnvIntDefault("LINKLETTER_WEBPORT", 8080),
+		SqlPort:     GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
+		SqlHost:     GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
+		SqlDB:       GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),
+		SqlUser:     GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
+		SqlPassword: GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
+		SecretKey:   GetEnvStringDefault("LINKLETTER_SECRETKEY", "secret123"),
 	}
 
-	flag.IntVar(&conf.webPort, "webPort", conf.webPort, "The port to run the web application on")
-	flag.IntVar(&conf.sqlPort, "sqlPort", conf.sqlPort, "The port the SQL server is running on")
-	flag.StringVar(&conf.sqlHost, "sqlHost", conf.sqlHost, "The SQL server host")
-	flag.StringVar(&conf.sqlDB, "sqlDB", conf.sqlDB, "The SQL database name to connect to")
-	flag.StringVar(&conf.sqlUser, "sqlUser", conf.sqlUser, "The username to use when connecting to SQL database")
-	flag.StringVar(&conf.sqlPassword, "sqlPassword", conf.sqlPassword, "the password to use when conneting to SQL database")
+	flag.IntVar(&conf.WebPort, "webPort", conf.WebPort, "The port to run the web application on")
+	flag.IntVar(&conf.SqlPort, "sqlPort", conf.SqlPort, "The port the SQL server is running on")
+	flag.StringVar(&conf.SqlHost, "sqlHost", conf.SqlHost, "The SQL server host")
+	flag.StringVar(&conf.SqlDB, "sqlDB", conf.SqlDB, "The SQL database name to connect to")
+	flag.StringVar(&conf.SqlUser, "sqlUser", conf.SqlUser, "The username to use when connecting to SQL database")
+	flag.StringVar(&conf.SqlPassword, "sqlPassword", conf.SqlPassword, "The password to use when conneting to SQL database")
+	flag.StringVar(&conf.SecretKey, "secretKey", conf.SecretKey, "The secret key to use to sign cookies")
 
 	flag.Parse()
 	return conf
