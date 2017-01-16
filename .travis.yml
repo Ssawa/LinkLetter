@@ -1,12 +1,10 @@
 language: go
-
 go:
-    - 1.7.x
-    - master
-
+- 1.7.x
+- master
 deploy:
-    provider: heroku
-    api_key:
-        secure: "q1tA89ZosLw26wWXMbPc+SzBwLbdypqURULU/XVwOQ9c1RJLGFEaBoKYJJ5CkZxe1kRWzLPue1qitp8xaL9yrpQgwqLBS2l0GUPP05m4W4APnYuaL0D4MTAhOZiqcapWGAz15+stXb+jNeB6OtzKXkstM8oNGAMwt+nJmcsx03XlcMCeJLkM8L2Qw4CiVONG8rmBTJQneEUXpHLatmR+wm6LidfjrbeIQ2hXd7WKBXCIB4kLl1YoE4S0c3DQ8MiLDpiTCgjRHk0RELb/QiKR68EWedUBknNCshmVBxJGOlVQnwgI54m+ax7koQ69mdBNBavSBAG5daEHMTtEp+wfgrwGapwkQygZ4trNjwYPnYEgptZ2cbOUQAl3MgMtPCjwfDZqOoVoZL4RFJXD/a7021NPh8+mBHI3NedlXt4DjIxOAfI7bLhgEpKaBVnx1nRBXYK/Nu1ujwKltkm1F6IAKPb/hfwdpjLJGQRcbQXpyrI2suxhPBu48owc7fjOwM6bY+w1tJdqTP1vRtcNcHJrQTVqOvmoQr/1d/LdEfipuamOcdNoqBcZ3tqH7qMXziwL9pL5h4rVAh/OtPumg3l2pzxBdT4edjqS7R7hBSFt4caWoQ+j8882Z7cmTVbd6WEUGpR4g8st4jrlzdyquJUVirHLU+B/7AcWYodQzP3PJ2I="
-    app: linkletter
-    on: master
+  provider: heroku
+  api_key:
+    secure: Bh5aAdue5PpBCMEEjCd4JwpbPiEI41fmsYIdByoxUm1N56SvC+OKTqDKS79jVQT9TqDgjOyQtA+k1zsf71X9HxSpvCHwArfSK0iPNhEoWfaR1cHn1VAxUqMy/q2SOD37iPTZVBOdLZslgzUUaVw8MskQDT0h0U1C7emub9l3pAqVTmAJ3hjDSVGjjs5BtI8HQ8fMWOvEdKazdTPeDX1K9r/0kDhSWdFYNovB+MBhMOvzJvm7/hLLQpWkAyKl5Yij56o2avF26ZlRWWKvChX365f/EjEmnYPWOagFyMroJdqwCKF8OTpy9TcR2wFWRW6Wq4LaCOMtjAA85Z/B763Dol8m4ZfOEeGh+MRRPP7VZdRfo/oNqYKwaWDP1NynjtupIB4Ji+YC3kvhjpjR9sUnBZ89YJhbm0iN+b8Li2gXpmnOM3EyrPFb3sCEiGx8zXdQmEx6qOjZDJdy46xI2izaUxosOyllDfGcXKu7zVRzGFy1U5Zkeeu/M7kxPZ6TvUX5z3687WiQkLcJzB0o9u6/Fxf2kyHDZdLehqASM5RosALsFMddd/SsqvLERDSSXq4/tBQseeA9zsEzg2Y6/OhjIzxk7PuLoC4oL3TYwVgJJPUsaR5zICJ22H4svsSuLQy25M7xtPSvIzpdjnWGufMV2hRHHHwQjEcwGND/WfNkDBk=
+  app: linkletter
+  on: master
