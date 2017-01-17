@@ -2,6 +2,13 @@ language: go
 go:
   - 1.7.x
   - master
+
+# Go has this weird thing where it forces you to execute tests for the vendored libraries.
+# This is a problem for us because the postgres driver pq has tests that depend on having an
+# active postgres up. This is a bit of a hack around it and this command is reccommended for
+# running tests while developing 
+script: go test -v $(go list ./... | grep -v /vendor/)
+
 deploy:
   provider: heroku
   api_key:
