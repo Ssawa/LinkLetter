@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"regexp"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,6 +47,25 @@ func TestDoesMigrationTableExist(t *testing.T) {
 
 	mock.ExpectQuery(listTablesQuery).WillReturnRows(sqlmock.NewRows(outputColumns).AddRow(migrationTable))
 	assert.True(t, doesMigrationTableExist(db))
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestCreateMigrationTable(t *testing.T) {
+	db, mock, _ := sqlmock.New()
+	mock.ExpectExec(regexp.QuoteMeta(createMigrationTableQuery)).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(createFirstEntryQuery)).WillReturnResult(sqlmock.NewResult(0, 0))
+	createMigrationTable(db)
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGetCurrentMigration(t *testing.T) {
+	db, mock, _ := sqlmock.New()
+	mock.ExpectQuery(regexp.QuoteMeta(getCurrentMigrationQuery)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("1_test.sql"))
+	assert.Equal(t, "1_test.sql", getCurrentMigration(db))
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Error(err)
 	}

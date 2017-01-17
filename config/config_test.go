@@ -31,11 +31,12 @@ func TestParseForConfig(t *testing.T) {
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 
-	os.Args = []string{os.Args[0], "-sqlDB", "override", "-sqlUser", "testuser"}
+	os.Args = []string{os.Args[0], "-sqlDB", "override", "-sqlUser", "testuser", "-sqlUseSSL"}
 	conf := ParseForConfig()
 
 	assert.Equal(t, 7000, conf.WebPort)
-	assert.Equal(t, "testhost", conf.SqlHost)
-	assert.Equal(t, "override", conf.SqlDB)
-	assert.Equal(t, "testuser", conf.SqlUser)
+	assert.Equal(t, "testhost", conf.SQLHost)
+	assert.Equal(t, "override", conf.SQLDB)
+	assert.Equal(t, "testuser", conf.SQLUser)
+	assert.Equal(t, true, conf.SQLUseSSL)
 }

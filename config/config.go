@@ -10,11 +10,12 @@ import (
 // appliation
 type Config struct {
 	WebPort     int
-	SqlPort     int
-	SqlHost     string
-	SqlDB       string
-	SqlUser     string
-	SqlPassword string
+	SQLPort     int
+	SQLHost     string
+	SQLDB       string
+	SQLUser     string
+	SQLPassword string
+	SQLUseSSL   bool
 	SecretKey   string
 }
 
@@ -44,20 +45,21 @@ func ParseForConfig() Config {
 	conf := Config{
 		// WebPort doesn't follow the LINKLETTER namespacing to be complacint with Heroku
 		WebPort:     GetEnvIntDefault("PORT", 8080),
-		SqlPort:     GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
-		SqlHost:     GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
-		SqlDB:       GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),
-		SqlUser:     GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
-		SqlPassword: GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
+		SQLPort:     GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
+		SQLHost:     GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
+		SQLDB:       GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),
+		SQLUser:     GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
+		SQLPassword: GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
 		SecretKey:   GetEnvStringDefault("LINKLETTER_SECRETKEY", "secret123"),
 	}
 
 	flag.IntVar(&conf.WebPort, "webPort", conf.WebPort, "The port to run the web application on")
-	flag.IntVar(&conf.SqlPort, "sqlPort", conf.SqlPort, "The port the SQL server is running on")
-	flag.StringVar(&conf.SqlHost, "sqlHost", conf.SqlHost, "The SQL server host")
-	flag.StringVar(&conf.SqlDB, "sqlDB", conf.SqlDB, "The SQL database name to connect to")
-	flag.StringVar(&conf.SqlUser, "sqlUser", conf.SqlUser, "The username to use when connecting to SQL database")
-	flag.StringVar(&conf.SqlPassword, "sqlPassword", conf.SqlPassword, "The password to use when conneting to SQL database")
+	flag.IntVar(&conf.SQLPort, "sqlPort", conf.SQLPort, "The port the SQL server is running on")
+	flag.StringVar(&conf.SQLHost, "sqlHost", conf.SQLHost, "The SQL server host")
+	flag.StringVar(&conf.SQLDB, "sqlDB", conf.SQLDB, "The SQL database name to connect to")
+	flag.StringVar(&conf.SQLUser, "sqlUser", conf.SQLUser, "The username to use when connecting to SQL database")
+	flag.StringVar(&conf.SQLPassword, "sqlPassword", conf.SQLPassword, "The password to use when conneting to SQL database")
+	flag.BoolVar(&conf.SQLUseSSL, "sqlUseSSL", false, "Whether or not SQL connection should be over SSL")
 	flag.StringVar(&conf.SecretKey, "secretKey", conf.SecretKey, "The secret key to use to sign cookies")
 
 	flag.Parse()
