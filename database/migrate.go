@@ -29,9 +29,13 @@ func execSQLFile(tx *sql.Tx, file string) error {
 	contents := string(buf)
 	statements := strings.Split(contents, ";")
 	for _, statement := range statements {
-		_, err = tx.Exec(statement)
-		if err != nil {
-			return err
+		statement = strings.TrimSpace(statement)
+		if statement != "" {
+			logger.Debug.Printf("Executing: %s", statement)
+			_, err = tx.Exec(statement)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -140,26 +144,57 @@ func getCurrentMigration(db *sql.DB) string {
 	return migration
 }
 
-// DoMigrations brings the supplied database up to date with current state of
-// the migration files
-func DoMigrations(db *sql.DB) {
+func createMigrationTableIfNeeded(db *sql.DB) {
 	if !doesMigrationTableExist(db) {
 		logger.Info.Printf("Migration table does not yet exist. Creating it")
 		createMigrationTable(db)
 	}
+}
+
+func getCurrentMigrationIndex(db *sql.DB, migrations []string) int {
+	if currentMigration := getCurrentMigration(db); currentMigration != "" {
+		startIndex := posInSlice(migrations, currentMigration)
+		if startIndex == -1 {
+			return startIndex
+		}
+		return startIndex + 1
+	}
+	return 0
+}
+
+func performNeededMigrations(tx *sql.Tx, migrations []string, startIndex int) {
+	for _, migration := range migrations[startIndex:] {
+		logger.Info.Printf("Perfoming migration: %s", migration)
+		err := execSQLFile(tx, fmt.Sprintf("migrations/%s", migration))
+		if err != nil {
+			logger.Error.Printf("Error occured executing migration. Rolling back and panicking")
+			tx.Rollback()
+			panic(err)
+		}
+	}
+}
+
+func updateMigrationTable(tx *sql.Tx, migrations []string) {
+	_, err := tx.Exec(updateMigrationQuery, migrations[len(migrations)-1])
+	if err != nil {
+		logger.Error.Printf("Unable to update migration table. Rolling back")
+		tx.Rollback()
+		panic(err)
+	}
+}
+
+// DoMigrations brings the supplied database up to date with current state of
+// the migration files
+func DoMigrations(db *sql.DB) {
+	createMigrationTableIfNeeded(db)
 
 	migrations := getMigrationsInOrder()
 
-	var startIndex int
-	if currentMigration := getCurrentMigration(db); currentMigration != "" {
-		startIndex = posInSlice(migrations, currentMigration)
-		if startIndex == -1 {
-			logger.Warning.Printf("Could not find migration listed in database on filesystem. Aborting migration")
-			return
-		}
-		startIndex++
-	} else {
-		startIndex = 0
+	startIndex := getCurrentMigrationIndex(db, migrations)
+
+	if startIndex == -1 {
+		logger.Warning.Printf("Could not find migration listed in database on filesystem")
+		return
 	}
 
 	if startIndex == len(migrations) {
@@ -168,27 +203,18 @@ func DoMigrations(db *sql.DB) {
 	}
 
 	logger.Info.Printf("Perfoming database migrations")
+
 	tx, err := db.Begin()
+
 	if err != nil {
 		logger.Error.Printf("Could not start transaction for migrations")
 		panic(err)
 	}
-	for _, migration := range migrations {
-		logger.Info.Printf("Perfoming migration: %s", migration)
-		err = execSQLFile(tx, fmt.Sprintf("migrations/%s", migration))
-		if err != nil {
-			logger.Error.Printf("Error occured executing migration. Rolling back and panicking")
-			tx.Rollback()
-			panic(err)
-		}
-	}
+
+	performNeededMigrations(tx, migrations, startIndex)
 
 	logger.Info.Printf("Finished performing migrations. Updating migration table")
-	_, err = tx.Exec(updateMigrationQuery, migrations[len(migrations)-1])
-	if err != nil {
-		logger.Error.Printf("Unable to update migration table. Rolling back")
-		tx.Rollback()
-		panic(err)
-	}
+	updateMigrationTable(tx, migrations)
+
 	tx.Commit()
 }
