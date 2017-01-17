@@ -16,5 +16,5 @@ deploy:
   app: linkletter
   on: 
     branch: master
-    condition: $TRAVIS_GO_VERSION = 1.7.x
+    condition: $TRAVIS_GO_VERSION =~ ^1\.7\.[0-9]+$
 
