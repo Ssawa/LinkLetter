@@ -19,7 +19,7 @@ func main() {
 	database.DoMigrations(db)
 
 	logger.Debug.Println("Creating server...")
-	server := web.CreateServer(conf)
+	server := web.CreateServer(conf, db)
 	logger.Info.Printf("Starting server...")
 	http.ListenAndServe(fmt.Sprintf(":%d", conf.WebPort), logger.LogHTTPRequests(logger.Info, server.Router))
 }

@@ -1,19 +1,13 @@
-package web
+package template
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestListTemplates(t *testing.T) {
-	originalCWD, _ := os.Getwd()
-	defer func() { os.Chdir(originalCWD) }()
-
-	os.Chdir("test_assets")
-
-	templates := listTemplates()
+	templates := listTemplates("test_assets/templates")
 	assert.Len(t, templates, 2)
 	assert.Contains(t, templates, "templates/testfile.tmpl")
 	assert.Contains(t, templates, "templates/nested/template.tmpl")
