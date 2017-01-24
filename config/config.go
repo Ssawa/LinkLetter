@@ -1,4 +1,13 @@
+// Package config is responsible for defining and gathering configuration data
+// for use in the application
 package config
+
+// It's probably worth noting that there's probably no reason we should be writing
+// our own config system. I'm sure there's plenty of great libraries out there that
+// do everything we need. But this project is about learning and trying to learn
+// the best way of doing things. Besides, the ones I came across were by people on
+// GitHub with  ridiculous user names like "codekilla". Am I supposed to put
+// "codekilla" in my imports? Come on.
 
 import (
 	"flag"
@@ -7,8 +16,15 @@ import (
 )
 
 // Config contains all the configurable data needed to run the
-// appliation
+// application.
 type Config struct {
+	// I committed myself to making this a defined struct because I liked the
+	// idea of having the compiler checking for spelling typos and IDE code
+	// completion. Looking at it now though, I think it should maybe just be
+	// switched to a map with string keys. It would make iterating over configs
+	// flags much easier, and not require messy introspection. That alone
+	// could make the process of adding new config options easier.
+
 	WebPort     int
 	SQLPort     int
 	SQLHost     string
@@ -20,7 +36,7 @@ type Config struct {
 }
 
 // GetEnvStringDefault wraps os.Getenv to get an environment variable as a
-// string and supporting a default option
+// string and supporting a default option.
 func GetEnvStringDefault(env string, defaultValue string) string {
 	value := os.Getenv(env)
 	if value == "" {
@@ -30,7 +46,7 @@ func GetEnvStringDefault(env string, defaultValue string) string {
 }
 
 // GetEnvIntDefault gets an environment variable as an int and supports
-// a default option
+// a default option.
 func GetEnvIntDefault(env string, defaultInt int) int {
 	i, err := strconv.Atoi(os.Getenv(env))
 	if err != nil {
@@ -40,10 +56,27 @@ func GetEnvIntDefault(env string, defaultInt int) int {
 }
 
 // ParseForConfig grabs required information from the program args
-// and environment vairables and creates a Config object
+// and environment variables and creates a Config object. Program
+// arguments take precedence over environment variables.
 func ParseForConfig() Config {
+	// I'm not happy with this. What we're essentially doing is defining our configuration
+	// in two separate places, right? The structural make up in the struct and the defaults
+	// and environment data here. And while the argument can be made that that's a fair
+	// decoupalation, it just doesn't *feel* right to me. This whole thing might need to
+	// be rethought.
+	//
+	// Also, this does not currently support config files, only allowing configs from program
+	// args or environment variables, and that needs to be added in sooner or later.
+
 	conf := Config{
-		// WebPort doesn't follow the LINKLETTER namespacing to be complacint with Heroku
+
+		// Okay, so I initially wanted it so that all environment variables would be prefaced
+		// with "LINKLETTER_" so that they could play nicely with other programs. But, as it
+		// turns out, Heroku insists on passing the binding port in under the environment
+		// variable PORT, and we're using Heroku so here we are. Now does that mean that
+		// we should go ahead, admit defeat, and just shear off "LINKLETTER_" from the rest
+		// of env vars? Yeah, would probably reduce confusion. I just don't have the heart to
+		// do it.
 		WebPort:     GetEnvIntDefault("PORT", 8080),
 		SQLPort:     GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
 		SQLHost:     GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),

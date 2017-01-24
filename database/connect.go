@@ -10,7 +10,7 @@ import (
 )
 
 // ConnectToDB opens up a connection to the database and returns
-// a pointer to the connection
+// a pointer to it.
 func ConnectToDB(conf config.Config) *sql.DB {
 	sslOption := "disable"
 	if conf.SQLUseSSL {
