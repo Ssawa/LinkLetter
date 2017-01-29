@@ -6,7 +6,6 @@ package handlers
 
 import (
 	"database/sql"
-	"net/http"
 
 	"github.com/Ssawa/LinkLetter/web/template"
 	"github.com/gorilla/mux"
@@ -23,10 +22,10 @@ type HandlerManager interface {
 	// use by it's handlers.
 	InitializeResources(*sql.DB, *sessions.CookieStore, *template.Templator)
 
-	// GetRoutes initializes all routes onto a Handler (most probably a mux.Router)
+	// InitRoutes initializes all routes onto a Handler (most probably a mux.Router)
 	// where it can be associated with the main server's router at a path prefix
 	// of it's choosing.
-	GetRoutes() http.Handler
+	InitRoutes(*mux.Router)
 }
 
 // BaseHandlerManager implements the basic functionality of a HandlerManager, such as
@@ -106,9 +105,8 @@ func (manager *BaseHandlerManager) InitializeResources(db *sql.DB, cookies *sess
 	manager.templator = templator
 }
 
-// GetRoutes doesn't do much here. Actually it does functionally nothing. It only really exists so that BaseHandlerManager
+// InitRoutes doesn't do much here. Actually it does functionally nothing. It only really exists so that BaseHandlerManager
 // completely implements HandlerManager and to give a more thorough template to those who may wish to "inherit"
 // from BaseHandlerManager.
-func (manager *BaseHandlerManager) GetRoutes() http.Handler {
-	return mux.NewRouter()
+func (manager *BaseHandlerManager) InitRoutes(*mux.Router) {
 }

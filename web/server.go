@@ -145,7 +145,7 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 
 // InitializeManager initializes the handlers.HandlerManager with the server's resource information
 // and then registers that handlers.HandlerManager to handle the signified path.
-func (server *Server) InitializeManager(path string, manager handlers.HandlerManager) {
+func (server *Server) InitializeManager(prefix string, manager handlers.HandlerManager) {
 
 	// When I started architecting things I was hoping that a function like this wouldn't be necessary.
 	// In an ideal world you'd just create the HandlerManager struct with a reference to Server, and then
@@ -155,5 +155,5 @@ func (server *Server) InitializeManager(path string, manager handlers.HandlerMan
 	// we need to pass our resources in one at a time.
 
 	manager.InitializeResources(server.db, server.cookies, server.templator)
-	server.Router.Handle(path, manager.GetRoutes())
+	manager.InitRoutes(server.Router.PathPrefix(prefix).Subrouter())
 }

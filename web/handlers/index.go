@@ -18,8 +18,6 @@ func (manager IndexHandlerManager) IndexHandler(w http.ResponseWriter, r *http.R
 	manager.templator.RenderTemplate(w, "login.tmpl", nil)
 }
 
-func (manager *IndexHandlerManager) GetRoutes() http.Handler {
-	router := mux.NewRouter()
-	router.HandleFunc("/", manager.IndexHandler).Methods("GET")
-	return router
+func (manager *IndexHandlerManager) InitRoutes(router *mux.Router) {
+	router.Methods("GET").HandlerFunc(manager.IndexHandler)
 }
