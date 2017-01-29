@@ -56,12 +56,12 @@ func (manager *DummyHandlerManager) InitializeResources(db *sql.DB, cookies *ses
 func (manager *DummyHandlerManager) InitRoutes(router *mux.Router) {
 	manager.InitRoutesWasCalled = true
 
-	router.Path("/nested").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		manager.NestedHandlerFuncWasCalled = true
+	router.HandleFunc("", func(w http.ResponseWriter, r *http.Request) {
+		manager.RootHandlerFuncWasCalled = true
 	})
 
-	router.Path("/").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		manager.RootHandlerFuncWasCalled = true
+	router.HandleFunc("/nested", func(w http.ResponseWriter, r *http.Request) {
+		manager.NestedHandlerFuncWasCalled = true
 	})
 }
 
@@ -82,7 +82,7 @@ func TestInitializeManager(t *testing.T) {
 	assert.True(t, testHandlerManager.InitializeResourcesWasCalled)
 	assert.True(t, testHandlerManager.InitRoutesWasCalled)
 
-	req := httptest.NewRequest("GET", "/test/", nil)
+	req := httptest.NewRequest("GET", "/test", nil)
 	resp := httptest.NewRecorder()
 	server.Router.ServeHTTP(resp, req)
 	assert.Equal(t, 200, resp.Code)

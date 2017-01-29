@@ -124,6 +124,19 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 		cookies:   sessions.NewCookieStore([]byte(conf.SecretKey)),
 	}
 
+	// Keep in mind, when setting routes, that gorilla/mux will match with the first
+	// valid path it finds, not necessarily the most specific. So:
+	//     server.Router.PathPrefix("/test")
+	//     server.Router.PathPrefix("/testroute")
+	//
+	// will match with "/test" for "/testroute/something" before "/testroute". To solve this
+	// simply define routes in descending specificity, such as:
+	//     server.Router.PathPrefix("/testroute")
+	//     server.Router.PathPrefix("/test")
+	//
+	// In the future we may want to include a helper function that tries to clean up our route
+	// orders for us
+
 	// If you're curious why we pass in the pointer reference of the HandlerManager
 	// I reccommend the following stack overflow discussion:
 	// http://stackoverflow.com/questions/33936081/golang-method-with-pointer-receiver

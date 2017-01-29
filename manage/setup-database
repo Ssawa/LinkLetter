@@ -73,7 +73,7 @@ echo
 
 if ! docker ps | grep linkletter-postgres > /dev/null ; then
     echo "Okay, we can now go ahead and actually create our container. What the following command does is start a new container named 'linkletter-posgress' using the 'postgres' image we just downloaded and then binds port 5432 of this new virtual envionment (which postgres talks over) to the non standard port 9753 (we bind to this port only so we don't conflict with anything else, and can easily be changed)"
-    execute-command "docker run --name linkletter-postgres -e POSTGRES_USER=linkletter -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=linkletter -p 127.0.0.1:9753:5432 -d postgres"
+    execute-command "docker run --rm --name linkletter-postgres -e POSTGRES_USER=linkletter -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=linkletter -p 127.0.0.1:9753:5432 -d postgres"
 fi
 
 echo "And with that you should be all set! Be sure to read up on docker at https://docs.docker.com/engine/getstarted/ and postgres to figure out how to actually manage what you now have running. Or, just ask me!"

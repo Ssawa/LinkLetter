@@ -19,5 +19,5 @@ func (manager IndexHandlerManager) IndexHandler(w http.ResponseWriter, r *http.R
 }
 
 func (manager *IndexHandlerManager) InitRoutes(router *mux.Router) {
-	router.Methods("GET").HandlerFunc(manager.IndexHandler)
+	router.HandleFunc("/", manager.IndexHandler)
 }
