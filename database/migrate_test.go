@@ -6,17 +6,33 @@ import (
 
 	"regexp"
 
+	"fmt"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Ssawa/LinkLetter/logger"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestGetSplitToken(t *testing.T) {
+	assert.Equal(t, ";", getSplitToken("NothingToSeeHere"))
+
+	assert.Equal(t, fullSplitToken, getSplitToken(fmt.Sprintf("blah blah %s blah blah", fullSplitToken)))
+}
+
+func TestSplitQueries(t *testing.T) {
+	baseContent := "  Query one %[1]s Querytwo%[1]squerythree"
+	expected := []string{"Query one", "Querytwo", "querythree"}
+	assert.Equal(t, expected, splitQueries(fmt.Sprintf(baseContent, ";")))
+	assert.Equal(t, expected, splitQueries(fmt.Sprintf(baseContent, fullSplitToken)))
+}
 
 func TestExecSQLFile(t *testing.T) {
 	db, mock, _ := sqlmock.New()
 
 	// Tests a multiline statement
 	mock.ExpectBegin()
-	mock.ExpectExec("CREATE TABLE Persons (.*)").WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("CREATE TABLE Persons (.*);").WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec("Something with; semi-colons").WillReturnResult(sqlmock.NewResult(0, 0))
 	tx, _ := db.Begin()
 	err := execSQLFile(tx, "test_assets/migrations/1_first.sql")
 	assert.Nil(t, err, err)

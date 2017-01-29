@@ -43,6 +43,7 @@ import (
 // that will come up for all our tables and we'll want to make sure we can change table names easily without
 // breaking all our queries.
 const (
+	fullSplitToken            = "-- StatementBegin"
 	migrationTable            = "_migrations_"
 	listTablesQuery           = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
 	createMigrationTableQuery = "CREATE TABLE _migrations_ (version TEXT NOT NULL)"
@@ -51,34 +52,53 @@ const (
 	updateMigrationQuery      = "UPDATE _migrations_ SET version=$1"
 )
 
+func getSplitToken(content string) string {
+	// Here's a little trick we'll try. We'll default to just splitting by the semi colon if we don't find
+	// instances of the full split token in the file so that people can get simple statements (which should
+	// be the majority) to work without doing anything special. But we'll also support full token splitting
+	// if we need to.
+	if strings.Contains(content, fullSplitToken) {
+		return fullSplitToken
+	}
+	return ";"
+}
+
+func splitQueries(content string) []string {
+	// Unfortunately the token we use to split queries can't (or shouldn't) just be ";", because then
+	// we get into cases where what happens if we have subqueries or just strings with escaped semi-colons?
+	// The standard convention is to instead just use some kind of known comment string to split up statements.
+	// It's a pain and requires an extra step, but it's safer.
+	statements := strings.Split(content, getSplitToken(content))
+	cleaned := []string{}
+
+	for _, statement := range statements {
+		statement = strings.TrimSpace(statement)
+		if statement != "" {
+			cleaned = append(cleaned, statement)
+		}
+	}
+
+	return cleaned
+}
+
 func execSQLFile(tx *sql.Tx, file string) error {
 	// Surprisingly, Golang's SQL package has no way of actually executing a sql file. Weird right?
 	// The suggested way of doing this is to spawn a subprocess, executing something like
 	// "cat file > psql ..." I'd really like to not have to do that. We'd have to make an assumption
 	// that psql is on the developers path and I just know it would be a headache. I mean, we already
 	// have a connection to postgres, we should just use that, right? So what this does is split the
-	// file into separate commands using a known token and executes each one at a time. Unfortunately
-	// this token can't (or shouldn't) just be ";", because then we get into cases where what happens
-	// if we have subqueries or just strings with escaped semi-colons? The standard convention is to
-	// instead just use some kind of known comment string to split up statements. It's a pain and
-	// requires an extra step, but it's safer. Maybe we should do something where it can try
-	// semi colon by default unless it sees the marker? Something like https://bitbucket.org/liamstask/goose
+	// file into separate commands using a known token and executes each one at a time.
 
 	buf, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
 	}
-
-	contents := string(buf)
-	statements := strings.Split(contents, ";")
-	for _, statement := range statements {
-		statement = strings.TrimSpace(statement)
-		if statement != "" {
-			logger.Debug.Printf("Executing: %s", statement)
-			_, err = tx.Exec(statement)
-			if err != nil {
-				return err
-			}
+	content := string(buf)
+	for _, statement := range splitQueries(content) {
+		logger.Debug.Printf("Executing: %s", statement)
+		_, err = tx.Exec(statement)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
