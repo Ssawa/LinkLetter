@@ -1,7 +1,9 @@
 package template
 
 import (
+	"fmt"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,12 +12,61 @@ import (
 	"github.com/Ssawa/LinkLetter/logger"
 )
 
+// parseFilesWithPaths is almost exactly the same as template.parseFiles with the
+// exception that it maintains the relative path to the file rather than parsing out
+// the basename. This allows us to have the same filenames in different directories.
+// Optionally, you can choose to trim out a base route to clean things up.
+// e.x:
+//    index.html
+//    users/index.html
+//    posts/index.html
+//    etc...
+func parseFilesWithPaths(prefix string, filenames ...string) (*template.Template, error) {
+	var t *template.Template
+	if len(filenames) == 0 {
+		// Not really a problem, but be consistent.
+		return nil, fmt.Errorf("html/template: no files named in call to ParseFiles")
+	}
+	for _, filename := range filenames {
+		b, err := ioutil.ReadFile(filename)
+		if err != nil {
+			return nil, err
+		}
+		s := string(b)
+
+		// This is the only real change we're making, where we're replacing:
+		//     name := filepath.Base(filename)
+		name := strings.TrimPrefix(filename, prefix)
+
+		// First template becomes return value if not already defined,
+		// and we use that one for subsequent New calls to associate
+		// all the templates together. Also, if this file has the same name
+		// as t, this file becomes the contents of t, so
+		//  t, err := New(name).Funcs(xxx).ParseFiles(name)
+		// works. Otherwise we create a new template associated with t.
+		var tmpl *template.Template
+		if t == nil {
+			t = template.New(name)
+		}
+		if name == t.Name() {
+			tmpl = t
+		} else {
+			tmpl = t.New(name)
+		}
+		_, err = tmpl.Parse(s)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return t, nil
+}
+
 // listTemplates lists all the template files in the given path, in no certain order.
-func listTemplates(path string) []string {
+func listTemplates(root string) []string {
 	logger.Debug.Printf("Gathering list of templates...")
 
 	templates := []string{}
-	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+	err := filepath.Walk(root, func(path string, f os.FileInfo, err error) error {
 		if f != nil && !f.IsDir() && strings.HasSuffix(path, ".tmpl") {
 			templates = append(templates, path)
 		}
@@ -49,7 +100,7 @@ type Templator struct {
 // files for later use.
 func CreateDefaultTemplator() *Templator {
 	return &Templator{
-		templates: template.Must(template.ParseFiles(listTemplates("templates")...)),
+		templates: template.Must(parseFilesWithPaths("templates/", listTemplates("templates")...)),
 	}
 }
 

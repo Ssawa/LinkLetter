@@ -135,7 +135,7 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 	//     server.Router.PathPrefix("/test")
 	//
 	// In the future we may want to include a helper function that tries to clean up our route
-	// orders for us
+	// orders for us.
 
 	// If you're curious why we pass in the pointer reference of the HandlerManager
 	// I reccommend the following stack overflow discussion:
