@@ -6,6 +6,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// IndexHandlerManager is responsible for, surprise surprise, handling the index of our webpage.
+// In my mind however, this includes the routes not only of "/"" but the routes that "/" might
+// redirect to, such as "/login". See web/handlers/common.go for a deeper explanation of why
+// I'm not totally happy with this BaseHandlerManager thing.
 type IndexHandlerManager struct {
 	BaseHandlerManager
 }

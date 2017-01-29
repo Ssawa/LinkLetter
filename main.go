@@ -116,7 +116,7 @@ package main
 // by not changing anything they prove themselves to be principled, stoic, and very handsome; not, in fact,
 // belligerently hubristic about a cockadookie system.
 //
-// They did end up, reluctantly, adding vendoring support, which at least provides the shadow of an idea of
+// They did end up, begrudgingly, adding vendoring support, which at least provides the shadow of an idea of
 // versioning. This project takes advantage of this by way of the grea GoDeps library.
 import (
 	"fmt"

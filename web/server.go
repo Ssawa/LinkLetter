@@ -5,14 +5,14 @@ package web
 // web page but there's surprisingly little out there about best practices for structuring
 // a scalable solution for a full featured project, and the few open source examples I
 // skimmed through didn't seem too impressive. What we finally ended up with might not
-// be the best example itself, but I'm relatively happy with it and thank that it can
+// be the best example itself, but I'm relatively happy with it and think that it can
 // get the job done.
 //
 // The problems our architecture needs to overcome is:
 // 1. Resources such as the database connection and cookie sessions need to be passed
 //    to the http handlers for use in generating the response.
 // 2. The package structure needs to be able to support a potentially large number of handlers
-//    and routes, preferably organized into similar functionality.
+//    and routes, preferably organized by similar functionality.
 // 3. We want to define our routes as clearly and cleanly as possible without repeating
 //    ourselves too much or adding too much tedium.
 //
@@ -59,16 +59,41 @@ package web
 //
 //      server.Router.HandleFunc("/posts/", ListPosts).Methods("GET")
 //      server.Router.HandleFunc("/posts/", CreatePost).Methods("POST")
+//      server.Router.HandleFunc("/posts/{id}", GetPost).Methods("GET")
 //      server.Router.HandleFunc("/posts/{id}", UpdatePost).Methods("PUT")
+//      server.Router.HandleFunc("/posts/{id}", DeletePost).Methods("DELETE")
 //      ...
 //
 // We can instead simply define:
 //
 //      server.InitializeManager("/posts/", &handlers.PostHandlerManager{})
 //
-// And leave the responsibility of "Post" related routes to PostHandlerManager.
+// And leave the responsibility of "Post" related routes entirely to PostHandlerManager.
 //
-// Again, it's not a flawless system, but I hopefully it can pull off the job.
+// Again, it's not a flawless system, but hopefully it can pull off the job.
+//
+// Now, with my thought process out of the way, let's address the 10,000 pound elephant in the room:
+// why not just use a goddamn global? You may be thinking I'm being frustratingly obtuse, over-engineering
+// a fundamentally simple scenerio just to satisfy an irrational, internal voice that constantly shouts
+// down at me, like Yahweh to Moses on that cloudy precipice of Mount Sinai, "Thou shalt be stateless!
+// Thou shalt not put database connections into global variables!" You'd only be partially correct.
+// Look, I realize that it's not a huge deal, I'm even willing to play along under the right
+// circumstances (see logger/logger.go for an example of global variables), but I submit that having standards
+// is more important than what, exactly, those standards actually are. While these ubiquitous programming
+// "rules" are sometimes questionable, they provide helpful constraints. It forces us to to exercise
+// our grey matter, approach problem solving with thoughtfulness and creativity, and, most importantly to me,
+// maintain a respect for programming as a craft, in and of itself, rather than a means to an end. Arbitrary
+// and hand-wavy, I known, but as David Foster Wallace so succinctly described for us, "...in the day-to-day
+// trenches of adult existence, banal platitudes can have life-or-death importance."
+//
+// Don't, however, fall into the trap of thinking of these standards as rules, that one can never ignore
+// in favor of exploring one's own path. Lest we forget what that other literary giant, Neruda, told us:
+// "Those who shun the 'bad taste' of things will fall flat on the ice.", I only suggest that if one seeks,
+// "...the poetry we search for: worn with the hand's obligations, as by acids, steeped in sweat and in smoke,
+// smelling of the lilies and urine, spattered diversely by the trades that we live by, inside the law or
+// beyond it," one must first know the laws of their trade.
+//
+// In other words: no freaking globals, people.
 
 import (
 	"database/sql"
@@ -102,13 +127,15 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 	// If you're curious why we pass in the pointer reference of the HandlerManager
 	// I reccommend the following stack overflow discussion:
 	// http://stackoverflow.com/questions/33936081/golang-method-with-pointer-receiver
-	// Essentially, because BaseHandlerManager needs its pointer pass in for InitializeResources
+	// Essentially, because BaseHandlerManager needs its pointer passed in for InitializeResources
 	// we need to get the reference here. It's not very intuitive, and I kind of wish Go would
-	// make up it's mind about whether I need think about pointers or not.
+	// make up it's mind about whether we need think about pointers or not.
 	server.InitializeManager("/", &handlers.IndexHandlerManager{})
 
 	// This blindly exposes all files in the static folder, so be very careful about what
-	// you put in there.
+	// you put in there. I'd also like this line to demonstrate that our system is not
+	// dependent on handlers.HandlerManager for routes. HandlerManager is a tool to help us,
+	// but a handler is a handler and we can use whatever we want to define our routes.
 	server.Router.PathPrefix("/static/").Handler(
 		http.StripPrefix("/static/", http.FileServer(http.Dir("static"))),
 	)
