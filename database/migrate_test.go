@@ -7,8 +7,38 @@ import (
 	"regexp"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/Ssawa/LinkLetter/logger"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestExecSQLFile(t *testing.T) {
+	db, mock, _ := sqlmock.New()
+
+	// Tests a multiline statement
+	mock.ExpectBegin()
+	mock.ExpectExec("CREATE TABLE Persons (.*)").WillReturnResult(sqlmock.NewResult(0, 0))
+	tx, _ := db.Begin()
+	err := execSQLFile(tx, "test_assets/migrations/1_first.sql")
+	assert.Nil(t, err, err)
+
+	assert.Nil(t, mock.ExpectationsWereMet())
+
+	// Tests multiple statements in file
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing")).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing2")).WillReturnResult(sqlmock.NewResult(0, 0))
+	tx, _ = db.Begin()
+	err = execSQLFile(tx, "test_assets/migrations/2_second.sql")
+	assert.Nil(t, err, err)
+	tx.Exec("SELECT * FROM testing")
+	assert.Nil(t, mock.ExpectationsWereMet())
+}
+
+func TestPosInSlice(t *testing.T) {
+	array := []string{"test1", "test2", "test3"}
+	assert.Equal(t, 0, posInSlice(array, "test1"))
+	assert.Equal(t, -1, posInSlice(array, "test4"))
+}
 
 func TestGetMigrationIndex(t *testing.T) {
 	index, err := getMigrationIndex("55_test.sql")
@@ -62,41 +92,16 @@ func TestGetCurrentMigration(t *testing.T) {
 	assert.Nil(t, mock.ExpectationsWereMet())
 }
 
-func TestExecSQLFile(t *testing.T) {
-	db, mock, _ := sqlmock.New()
-
-	// Tests a multiline statement
-	mock.ExpectBegin()
-	mock.ExpectExec("CREATE TABLE Persons (.*)").WillReturnResult(sqlmock.NewResult(0, 0))
-	tx, _ := db.Begin()
-	err := execSQLFile(tx, "test_assets/migrations/1_first.sql")
-	assert.Nil(t, err, err)
-
-	assert.Nil(t, mock.ExpectationsWereMet())
-
-	// Tests multiple statements in file
-	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing")).WillReturnResult(sqlmock.NewResult(0, 0))
-	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing2")).WillReturnResult(sqlmock.NewResult(0, 0))
-	tx, _ = db.Begin()
-	err = execSQLFile(tx, "test_assets/migrations/2_second.sql")
-	assert.Nil(t, err, err)
-	tx.Exec("SELECT * FROM testing")
-	assert.Nil(t, mock.ExpectationsWereMet())
-}
-
-func TestPosInSlice(t *testing.T) {
-	array := []string{"test1", "test2", "test3"}
-	assert.Equal(t, 0, posInSlice(array, "test1"))
-	assert.Equal(t, -1, posInSlice(array, "test4"))
-}
-
 func TestCreateMigrationTableIfNeeded(t *testing.T) {
 	db, mock, _ := sqlmock.New()
 
 	mock.ExpectQuery(listTablesQuery).WillReturnRows(sqlmock.NewRows([]string{"table_name"}))
 	mock.ExpectExec(regexp.QuoteMeta(createMigrationTableQuery)).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(regexp.QuoteMeta(createFirstEntryQuery)).WillReturnResult(sqlmock.NewResult(0, 0))
+	createMigrationTableIfNeeded(db)
+	assert.Nil(t, mock.ExpectationsWereMet())
+
+	mock.ExpectQuery(listTablesQuery).WillReturnRows(sqlmock.NewRows([]string{"table_name"}).AddRow(migrationTable))
 	createMigrationTableIfNeeded(db)
 	assert.Nil(t, mock.ExpectationsWereMet())
 }
@@ -129,10 +134,80 @@ func TestPerformNeededMigrations(t *testing.T) {
 	performNeededMigrations(tx, []string{"1_first.sql", "2_second.sql", "3_third.sql"}, 0)
 	assert.Nil(t, mock.ExpectationsWereMet())
 
+	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing2")).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing3")).WillReturnResult(sqlmock.NewResult(0, 0))
+	performNeededMigrations(tx, []string{"1_first.sql", "2_second.sql", "3_third.sql"}, 1)
+	assert.Nil(t, mock.ExpectationsWereMet())
+
 	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing3")).WillReturnResult(sqlmock.NewResult(0, 0))
 	performNeededMigrations(tx, []string{"1_first.sql", "2_second.sql", "3_third.sql"}, 2)
 	assert.Nil(t, mock.ExpectationsWereMet())
 
 	performNeededMigrations(tx, []string{"1_first.sql", "2_second.sql", "3_third.sql"}, 3)
+	assert.Nil(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateMigrationTable(t *testing.T) {
+	db, mock, _ := sqlmock.New()
+	mock.ExpectBegin()
+	tx, _ := db.Begin()
+
+	mock.ExpectExec(regexp.QuoteMeta(updateMigrationQuery)).WithArgs("second_file").WillReturnResult(sqlmock.NewResult(1, 1))
+	updateMigrationTable(tx, []string{"first_file", "second_file"})
+	assert.Nil(t, mock.ExpectationsWereMet())
+}
+
+// Because DoMigrations is essentially a wrapper around all these other functions, there's a lot of repeated test code here.
+// Is there any way we can factor some of this stuff out?
+
+func TestDoMigrationsCouldNotFind(t *testing.T) {
+	originalCWD, _ := os.Getwd()
+	defer func() { os.Chdir(originalCWD) }()
+	os.Chdir("test_assets2")
+
+	log := logger.CreateDummyLogger()
+
+	db, mock, _ := sqlmock.New()
+
+	mock.ExpectQuery(listTablesQuery).WillReturnRows(sqlmock.NewRows([]string{"table_name"}).AddRow(migrationTable))
+	mock.ExpectQuery(regexp.QuoteMeta(getCurrentMigrationQuery)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("doesNotExist.sql"))
+
+	DoMigrations(db)
+	assert.Nil(t, mock.ExpectationsWereMet())
+	assert.Equal(t, "WARNING: Could not find migration listed in database on filesystem\n", log.Warning.Last())
+}
+
+func TestDoMigrationsUpToDate(t *testing.T) {
+	originalCWD, _ := os.Getwd()
+	defer func() { os.Chdir(originalCWD) }()
+	os.Chdir("test_assets2")
+
+	log := logger.CreateDummyLogger()
+
+	db, mock, _ := sqlmock.New()
+
+	mock.ExpectQuery(listTablesQuery).WillReturnRows(sqlmock.NewRows([]string{"table_name"}).AddRow(migrationTable))
+	mock.ExpectQuery(regexp.QuoteMeta(getCurrentMigrationQuery)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("3_third.sql"))
+
+	DoMigrations(db)
+	assert.Nil(t, mock.ExpectationsWereMet())
+	assert.Equal(t, "DEBUG: The database seems to be up to date\n", log.Debug.Last())
+}
+
+func TestDoMigrationsExecute(t *testing.T) {
+	originalCWD, _ := os.Getwd()
+	defer func() { os.Chdir(originalCWD) }()
+	os.Chdir("test_assets2")
+
+	db, mock, _ := sqlmock.New()
+
+	mock.ExpectQuery(listTablesQuery).WillReturnRows(sqlmock.NewRows([]string{"table_name"}).AddRow(migrationTable))
+	mock.ExpectQuery(regexp.QuoteMeta(getCurrentMigrationQuery)).WillReturnRows(sqlmock.NewRows([]string{"version"}).AddRow("1_first.sql"))
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing2")).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta("SELECT * FROM testing3")).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(updateMigrationQuery)).WithArgs("3_third.sql").WillReturnResult(sqlmock.NewResult(1, 1))
+
+	DoMigrations(db)
 	assert.Nil(t, mock.ExpectationsWereMet())
 }

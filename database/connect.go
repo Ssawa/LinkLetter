@@ -9,17 +9,20 @@ import (
 	_ "github.com/lib/pq" // Makes the postgres driver available
 )
 
-// ConnectToDB opens up a connection to the database and returns
-// a pointer to it.
-func ConnectToDB(conf config.Config) *sql.DB {
+func configToDatabaseParams(conf config.Config) string {
 	sslOption := "disable"
 	if conf.SQLUseSSL {
 		sslOption = "require"
 	}
 
-	databaseParams := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d sslmode=%s",
+	return fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d sslmode=%s",
 		conf.SQLUser, conf.SQLPassword, conf.SQLDB, conf.SQLHost, conf.SQLPort, sslOption)
-	db, err := sql.Open("postgres", databaseParams)
+}
+
+// ConnectToDB opens up a connection to the database and returns
+// a reference to it.
+func ConnectToDB(conf config.Config) *sql.DB {
+	db, err := sql.Open("postgres", configToDatabaseParams(conf))
 	if err != nil {
 		logger.Error.Printf("Could not create a connection to the postgres database")
 		panic(err)

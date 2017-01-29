@@ -258,7 +258,7 @@ func DoMigrations(db *sql.DB) {
 		return
 	}
 
-	logger.Info.Printf("Perfoming database migrations")
+	logger.Info.Printf("Performing database migrations")
 
 	tx, err := db.Begin()
 
