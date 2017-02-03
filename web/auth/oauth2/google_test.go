@@ -1,31 +1,28 @@
 package oauth2
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"regexp"
 
+	"net/url"
+
 	"github.com/Ssawa/LinkLetter/web"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGoogleGenerateAuthorizationURL(t *testing.T) {
-	google := Google{
-		clientID:     "1234",
-		clientSecret: "5678",
-	}
+	google := Google{}
 
 	expected := "https://accounts.google.com/o/oauth2/v2/auth?client_id=1234&prompt=select_account&redirect_uri=https%3A%2F%2Flocalhost.com&response_type=code&scope=email"
-	assert.Equal(t, expected, google.GenerateAuthorizationURL("https://localhost.com").String())
+	assert.Equal(t, expected, google.GenerateAuthorizationURL("https://localhost.com", "1234", "email").String())
 }
 
 func TestGoogleExtractAuthorizationCode(t *testing.T) {
-	google := Google{
-		clientID:     "1234",
-		clientSecret: "5678",
-	}
+	google := Google{}
 
 	accessDeniedReq := httptest.NewRequest("GET", "https://oauth2.example.com/auth?error=access_denied", nil)
 	code, err := google.ExtractAuthorizationCode(accessDeniedReq)
@@ -43,20 +40,21 @@ func TestGoogleExtractAuthorizationCode(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestGoogleGenerateAccessTokenURL(t *testing.T) {
-	google := Google{
-		clientID:     "1234",
-		clientSecret: "5678",
-	}
-	expected := "https://www.googleapis.com/oauth2/v4/token?client_id=1234&client_secret=1234&code=authcode&grant_type=authorization_code&redirect_uri=https%3A%2F%2Flocalhost.com"
-	assert.Equal(t, expected, google.GenerateAccessTokenURL("authcode", "https://localhost.com").String())
+func TestGoogleGenerateAccessTokenReq(t *testing.T) {
+	google := Google{}
+	req := google.GenerateAccessTokenRequest("abcd", "https://localhost.com", "1234", "5678")
+
+	dataString, _ := ioutil.ReadAll(req.Body)
+	data, err := url.ParseQuery(string(dataString))
+	assert.Nil(t, err)
+	assert.Equal(t, data.Get("code"), "abcd")
+	assert.Equal(t, data.Get("client_id"), "1234")
+	assert.Equal(t, data.Get("client_secret"), "5678")
+	assert.Equal(t, data.Get("redirect_uri"), "https://localhost.com")
 }
 
 func TestGoogleExtractAccessToken(t *testing.T) {
-	google := Google{
-		clientID:     "1234",
-		clientSecret: "5678",
-	}
+	google := Google{}
 	resp := httptest.NewRecorder()
 	resp.Code = 200
 	resp.WriteString(`
@@ -85,10 +83,7 @@ func TestGoogleAuthenticate(t *testing.T) {
 	})
 	defer transport.Close()
 
-	google := Google{
-		clientID:     "1234",
-		clientSecret: "5678",
-	}
+	google := Google{}
 
 	pattern, _ := regexp.Compile("localprojects\\.(com|net)")
 	auth, err := google.Authenticate("abcd", pattern)

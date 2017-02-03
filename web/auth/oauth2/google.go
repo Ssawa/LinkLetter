@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 )
 
 const (
@@ -25,18 +26,16 @@ type googleProfileData struct {
 }
 
 type Google struct {
-	clientID     string
-	clientSecret string
 }
 
-func (google Google) GenerateAuthorizationURL(redirectURI string) *url.URL {
+func (google Google) GenerateAuthorizationURL(redirectURI, clientID, scope string) *url.URL {
 	u, _ := url.Parse(baseAuthURL)
 	query := u.Query()
-	query.Set("response_type", "code")
-	query.Set("scope", "email")
-	query.Set("prompt", "select_account")
-	query.Set("client_id", google.clientID)
+	query.Set("scope", scope)
+	query.Set("client_id", clientID)
 	query.Set("redirect_uri", redirectURI)
+	query.Set("prompt", "select_account")
+	query.Set("response_type", "code")
 	u.RawQuery = query.Encode()
 	return u
 }
@@ -56,18 +55,17 @@ func (google Google) ExtractAuthorizationCode(req *http.Request) (string, error)
 	return code, nil
 }
 
-func (google Google) GenerateAccessTokenURL(authorizationCode, redirectURI string) *url.URL {
-	u, _ := url.Parse(baseAccessURL)
-	query := u.Query()
+func (google Google) GenerateAccessTokenRequest(authorizationCode, redirectURI, clientID, clientSecret string) *http.Request {
+	data := url.Values{}
+	data.Set("code", authorizationCode)
+	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
+	data.Set("redirect_uri", redirectURI)
+	data.Set("grant_type", "authorization_code")
 
-	query.Set("code", authorizationCode)
-	query.Set("client_id", google.clientID)
-	query.Set("client_secret", google.clientID)
-	query.Set("redirect_uri", redirectURI)
-	query.Set("grant_type", "authorization_code")
-
-	u.RawQuery = query.Encode()
-	return u
+	req, _ := http.NewRequest("POST", baseAccessURL, strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return req
 }
 
 func (google Google) ExtractAccessToken(resp *http.Response) (string, error) {
