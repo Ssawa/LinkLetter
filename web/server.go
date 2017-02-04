@@ -100,6 +100,7 @@ import (
 	"net/http"
 
 	"github.com/Ssawa/LinkLetter/config"
+	"github.com/Ssawa/LinkLetter/web/auth/authentication"
 	"github.com/Ssawa/LinkLetter/web/handlers"
 	"github.com/Ssawa/LinkLetter/web/template"
 	"github.com/gorilla/mux"
@@ -169,4 +170,13 @@ func (server *Server) InitializeManager(prefix string, manager handlers.HandlerM
 
 	manager.InitializeResources(server.db, server.cookies, server.templator)
 	manager.InitRoutes(server.Router.PathPrefix(prefix).Subrouter())
+}
+
+// RouteWithAuth wraps the server's router in the AuthProtected middleware so that all routes require a login.
+//
+// This has been extracted out because there might be situations where we explicitly *don't* want authentication.
+// For instance, in development environments where required OAuth2 configs have not been set, main.go might pick
+// up on this but still allow us to test our program (with perhaps a warning logged)
+func (server *Server) RouteWithAuth() http.Handler {
+	return authentication.AuthProtected(server.cookies, server.Router)
 }

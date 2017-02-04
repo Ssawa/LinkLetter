@@ -30,6 +30,7 @@ func parseFilesWithPaths(prefix string, filenames ...string) (*template.Template
 	for _, filename := range filenames {
 		b, err := ioutil.ReadFile(filename)
 		if err != nil {
+			logger.Error.Printf("Error reading file: %s", err)
 			return nil, err
 		}
 		s := string(b)
@@ -55,6 +56,7 @@ func parseFilesWithPaths(prefix string, filenames ...string) (*template.Template
 		}
 		_, err = tmpl.Parse(s)
 		if err != nil {
+			logger.Error.Printf("Error parsing template: %s", err)
 			return nil, err
 		}
 	}
@@ -84,7 +86,7 @@ func listTemplates(root string) []string {
 	// be found than something terrible has happened and there's no chance the application will work
 	// correctly, so a panic is justified. Also, adherring to a new paradigm is hard...
 	if err != nil {
-		logger.Error.Printf("Error ocurred while geting templates")
+		logger.Error.Printf("Error ocurred while geting templates: %s", err)
 		panic(err)
 	}
 
@@ -108,6 +110,7 @@ func CreateDefaultTemplator() *Templator {
 func (t Templator) RenderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	err := t.templates.ExecuteTemplate(w, tmpl, data)
 	if err != nil {
+		logger.Error.Printf("Error rendering template: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
