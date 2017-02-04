@@ -114,6 +114,7 @@ type Server struct {
 	db        *sql.DB
 	templator *template.Templator
 	cookies   *sessions.CookieStore
+	conf      *config.Config
 }
 
 // CreateServer creates an instance of Server using the supplied config and database connection.
@@ -123,6 +124,7 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 		db:        db,
 		templator: template.CreateDefaultTemplator(),
 		cookies:   sessions.NewCookieStore([]byte(conf.SecretKey)),
+		conf:      &conf,
 	}
 
 	// Keep in mind, when setting routes, that gorilla/mux will match with the first
@@ -168,7 +170,7 @@ func (server *Server) InitializeManager(prefix string, manager handlers.HandlerM
 	// In C that could have been mitigated with a forward declaration but Go doesn't have them, so instead
 	// we need to pass our resources in one at a time.
 
-	manager.InitializeResources(server.db, server.cookies, server.templator)
+	manager.InitializeResources(server.db, server.cookies, server.templator, server.conf)
 	manager.InitRoutes(server.Router.PathPrefix(prefix).Subrouter())
 }
 

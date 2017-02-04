@@ -46,11 +46,12 @@ type DummyHandlerManager struct {
 	t                            *testing.T
 }
 
-func (manager *DummyHandlerManager) InitializeResources(db *sql.DB, cookies *sessions.CookieStore, templator *template.Templator) {
+func (manager *DummyHandlerManager) InitializeResources(db *sql.DB, cookies *sessions.CookieStore, templator *template.Templator, conf *config.Config) {
 	manager.InitializeResourcesWasCalled = true
 	assert.NotNil(manager.t, db)
 	assert.NotNil(manager.t, cookies)
 	assert.NotNil(manager.t, templator)
+	assert.NotNil(manager.t, conf)
 }
 
 func (manager *DummyHandlerManager) InitRoutes(router *mux.Router) {
@@ -75,6 +76,7 @@ func TestInitializeManager(t *testing.T) {
 		db:        db,
 		templator: new(template.Templator),
 		cookies:   sessions.NewCookieStore([]byte("secret")),
+		conf:      &config.Config{},
 	}
 
 	testHandlerManager := DummyHandlerManager{false, false, false, false, t}
