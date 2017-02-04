@@ -1,4 +1,4 @@
-package authentication
+package auth
 
 import (
 	"net/http"
@@ -53,44 +53,56 @@ func IsAuthenticated(req *http.Request, cookies *sessions.CookieStore) (bool, er
 	return false, nil
 }
 
-// AuthProtected is an http middleware that checks if a user is authenticated. If the user
+// ProtectedFunc is an http middleware that wraps an http.handlerfunc and checks if a user is authenticated. If the user
 // isn't then he/she is redirected to /login, if the user is, then the request continues
 // normally
-func AuthProtected(cookies *sessions.CookieStore, next http.Handler) http.Handler {
+func ProtectedFunc(cookies *sessions.CookieStore, wrap func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// I was originally thinking about making this middleware route bases (so you would
-		// have to explicitly set it for every route you wanted behind authentication) but
-		// quickly realized that, for our specific application, every page except for the login
-		// would be under authentication. While adding it for every route might be more explicit,
-		// the repetitive tedium of it would also increase the chance of error (someone accidentally
-		// leaving it out), so let's just make it a piece of middleware that can work on the
-		// entire router at once just to be safe.
-		if r.URL.Path != loginPage {
-			auth, err := IsAuthenticated(r, cookies)
+		auth, err := IsAuthenticated(r, cookies)
 
-			if err != nil {
-				// I noticed an interesting problem where, because I had been developing another
-				// server on the same port I was testing this application on, I just so happened
-				// to have a cookie set to our same "sessionName" and it was causing me 500 errors
-				// because mux.SecureCookies couldn't decode this unknown format. For this reason,
-				// instead of sending out a 500 error as we originally had it, we'll just treat
-				// it as if it were an unauthenticated state but not fault. This way, if the user
-				// chooses to sign in naturally, their bogus cookie will instead just be overwritten.
-				// Obviously the chances of this coming up "in the field" is unlikely, but as it's
-				// something that came up already, it would be good not to regress
-				logger.Error.Printf("Was unable to determine if user is authenticated, their '%s' cookie may be malformed: %s", sessionName, err)
-			}
-
-			if !auth {
-				// I kind of think this should be a 303 ("See Other") rather than
-				// a 302 ("Found"), but after doing some research it looks like 302s
-				// are the standard for cases like this (I believe it's what google uses)
-				// so we'll just go with that.
-				http.Redirect(w, r, loginPage, 302)
-				return
-			}
+		if err != nil {
+			// I noticed an interesting problem where, because I had been developing another
+			// server on the same port I was testing this application on, I just so happened
+			// to have a cookie set to our same "sessionName" and it was causing me 500 errors
+			// because mux.SecureCookies couldn't decode this unknown format. For this reason,
+			// instead of sending out a 500 error as we originally had it, we'll just treat
+			// it as if it were an unauthenticated state but not fault. This way, if the user
+			// chooses to sign in naturally, their bogus cookie will instead just be overwritten.
+			// Obviously the chances of this coming up "in the field" is unlikely, but as it's
+			// something that came up already, it would be good not to regress
+			logger.Error.Printf("Was unable to determine if user is authenticated, their '%s' cookie may be malformed: %s", sessionName, err)
 		}
 
-		next.ServeHTTP(w, r)
+		if !auth {
+			// I kind of think this should be a 303 ("See Other") rather than
+			// a 302 ("Found"), but after doing some research it looks like 302s
+			// are the standard for cases like this (I believe it's what google uses)
+			// so we'll just go with that.
+			http.Redirect(w, r, loginPage, 302)
+			return
+		}
+
+		wrap(w, r)
 	})
+}
+
+// ProtectedHandler is a piece of middleware that wraps an http.handler with the behavior
+// of ProtectedFunc
+//
+// I struggled a lot with how best to write this middleware, whether it should be handlerfunc
+// or handler based. It was originally just handlefunc, which meant that you would need to
+// set it explicitly for every route you wanted protected by authentication. However I soon
+// realized that, for our particular application, almost every route is going to require authentication
+// and forcing it to be explicit would only increase the chance of someone accidentally forgetting
+// to add it to a route and it thus being exposed. So to mitigate this I made it a piece of
+// http.handler middleware and wrapped the entire application with a few conditionals for things
+// like the login page itself and static routes. However this felt (and was) incredibly kludgy
+// so I ripped it out and started trying to see if I could make something integrated into the
+// mux subrouters, but unfortunately those freaking suck and are impossible to work with. So in
+// the end I simply abstracted the logic so I could have a function that would work for http.handlerfun
+// and http.handler and will leave the actual implementation details to some other package.
+//
+// Why am I telling you this? I just needed to bitch about how I spent my Saturday morning.
+func ProtectedHandler(cookies *sessions.CookieStore, next http.Handler) http.Handler {
+	return ProtectedFunc(cookies, next.ServeHTTP)
 }

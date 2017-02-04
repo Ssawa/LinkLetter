@@ -1,10 +1,9 @@
-package authentication
+package auth
 
 import (
 	"net/http"
-	"testing"
-
 	"net/http/httptest"
+	"testing"
 
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -40,10 +39,36 @@ func TestIsAuthenticated(t *testing.T) {
 	assert.False(t, auth)
 }
 
-func TestAuthProtected(t *testing.T) {
+func TestProtectedFunc(t *testing.T) {
+	cookies := sessions.NewCookieStore([]byte("testing"))
+
+	route := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+	}
+	wrapped := ProtectedFunc(cookies, route)
+
+	w := httptest.NewRecorder()
+	wrapped(w, httptest.NewRequest("GET", "http://localhost/", nil))
+	resp := w.Result()
+	assert.Equal(t, 302, resp.StatusCode)
+	assert.Equal(t, "/login", resp.Header.Get("Location"))
+
+	w = httptest.NewRecorder()
+	wrapped(w, authenticatedRequest(cookies, true))
+	resp = w.Result()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	w = httptest.NewRecorder()
+	wrapped(w, authenticatedRequest(cookies, false))
+	resp = w.Result()
+	assert.Equal(t, 302, resp.StatusCode)
+	assert.Equal(t, "/login", resp.Header.Get("Location"))
+}
+
+func TestProtectedHandler(t *testing.T) {
 	cookies := sessions.NewCookieStore([]byte("testing"))
 	mux := http.NewServeMux()
-	handler := AuthProtected(cookies, mux)
+	handler := ProtectedHandler(cookies, mux)
 
 	w := httptest.NewRecorder()
 
@@ -62,9 +87,4 @@ func TestAuthProtected(t *testing.T) {
 	resp = w.Result()
 	assert.Equal(t, 302, resp.StatusCode)
 	assert.Equal(t, "/login", resp.Header.Get("Location"))
-
-	w = httptest.NewRecorder()
-	handler.ServeHTTP(w, httptest.NewRequest("GET", "http://localhost/login", nil))
-	resp = w.Result()
-	assert.Equal(t, 404, resp.StatusCode)
 }

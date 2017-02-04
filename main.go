@@ -165,5 +165,5 @@ func main() {
 	server := web.CreateServer(conf, db)
 
 	logger.Info.Printf("Starting server...")
-	http.ListenAndServe(fmt.Sprintf(":%d", conf.WebPort), logger.LogHTTPRequests(logger.Info, server.RouteWithAuth()))
+	http.ListenAndServe(fmt.Sprintf(":%d", conf.WebPort), logger.LogHTTPRequests(logger.Info, server.Route()))
 }

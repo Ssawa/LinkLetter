@@ -34,7 +34,7 @@ func TestCreateServer(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	resp := httptest.NewRecorder()
 
-	server.Router.ServeHTTP(resp, req)
+	server.router.ServeHTTP(resp, req)
 	assert.Equal(t, 200, resp.Code)
 }
 
@@ -72,7 +72,7 @@ func TestInitializeManager(t *testing.T) {
 	router := mux.NewRouter()
 
 	server := Server{
-		Router:    router,
+		router:    router,
 		db:        db,
 		templator: new(template.Templator),
 		cookies:   sessions.NewCookieStore([]byte("secret")),
@@ -80,19 +80,19 @@ func TestInitializeManager(t *testing.T) {
 	}
 
 	testHandlerManager := DummyHandlerManager{false, false, false, false, t}
-	server.InitializeManager("/test", &testHandlerManager)
+	server.initializeManager("/test", &testHandlerManager)
 	assert.True(t, testHandlerManager.InitializeResourcesWasCalled)
 	assert.True(t, testHandlerManager.InitRoutesWasCalled)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp := httptest.NewRecorder()
-	server.Router.ServeHTTP(resp, req)
+	server.router.ServeHTTP(resp, req)
 	assert.Equal(t, 200, resp.Code)
 	assert.True(t, testHandlerManager.RootHandlerFuncWasCalled)
 
 	req = httptest.NewRequest("GET", "/test/nested", nil)
 	resp = httptest.NewRecorder()
-	server.Router.ServeHTTP(resp, req)
+	server.router.ServeHTTP(resp, req)
 	assert.Equal(t, 200, resp.Code)
 	assert.True(t, testHandlerManager.NestedHandlerFuncWasCalled)
 }

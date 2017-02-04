@@ -100,7 +100,6 @@ import (
 	"net/http"
 
 	"github.com/Ssawa/LinkLetter/config"
-	"github.com/Ssawa/LinkLetter/web/auth/authentication"
 	"github.com/Ssawa/LinkLetter/web/handlers"
 	"github.com/Ssawa/LinkLetter/web/template"
 	"github.com/gorilla/mux"
@@ -110,7 +109,7 @@ import (
 // Server is a general container for the web container. It holds information
 // to handle routing and the resources for the handlers.
 type Server struct {
-	Router    *mux.Router
+	router    *mux.Router
 	db        *sql.DB
 	templator *template.Templator
 	cookies   *sessions.CookieStore
@@ -120,7 +119,7 @@ type Server struct {
 // CreateServer creates an instance of Server using the supplied config and database connection.
 func CreateServer(conf config.Config, db *sql.DB) Server {
 	server := Server{
-		Router:    mux.NewRouter(),
+		router:    mux.NewRouter(),
 		db:        db,
 		templator: template.CreateDefaultTemplator(),
 		cookies:   sessions.NewCookieStore([]byte(conf.SecretKey)),
@@ -146,13 +145,13 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 	// Essentially, because BaseHandlerManager needs its pointer passed in for InitializeResources
 	// we need to get the reference here. It's not very intuitive, and I kind of wish Go would
 	// make up it's mind about whether we need think about pointers or not.
-	server.InitializeManager("/", &handlers.IndexHandlerManager{})
+	server.initializeManager("/", &handlers.IndexHandlerManager{})
 
 	// This blindly exposes all files in the static folder, so be very careful about what
 	// you put in there. I'd also like this line to demonstrate that our system is not
 	// dependent on handlers.HandlerManager for routes. HandlerManager is a tool to help us,
 	// but a handler is a handler and we can use whatever we want to define our routes.
-	server.Router.PathPrefix("/static/").Handler(
+	server.router.PathPrefix("/static/").Handler(
 		http.StripPrefix("/static/", http.FileServer(http.Dir("static"))),
 	)
 
@@ -161,7 +160,7 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 
 // InitializeManager initializes the handlers.HandlerManager with the server's resource information
 // and then registers that handlers.HandlerManager to handle the signified path.
-func (server *Server) InitializeManager(prefix string, manager handlers.HandlerManager) {
+func (server *Server) initializeManager(prefix string, manager handlers.HandlerManager) {
 
 	// When I started architecting things I was hoping that a function like this wouldn't be necessary.
 	// In an ideal world you'd just create the HandlerManager struct with a reference to Server, and then
@@ -171,14 +170,25 @@ func (server *Server) InitializeManager(prefix string, manager handlers.HandlerM
 	// we need to pass our resources in one at a time.
 
 	manager.InitializeResources(server.db, server.cookies, server.templator, server.conf)
-	manager.InitRoutes(server.Router.PathPrefix(prefix).Subrouter())
+	manager.InitRoutes(server.router.PathPrefix(prefix).Subrouter())
 }
 
-// RouteWithAuth wraps the server's router in the AuthProtected middleware so that all routes require a login.
+// Route prepares the server's routes and return an http.handler on which to serve http requests.
 //
-// This has been extracted out because there might be situations where we explicitly *don't* want authentication.
-// For instance, in development environments where required OAuth2 configs have not been set, main.go might pick
-// up on this but still allow us to test our program (with perhaps a warning logged)
-func (server *Server) RouteWithAuth() http.Handler {
-	return authentication.AuthProtected(server.cookies, server.Router)
+// Originally "Server.router" was simply a public member that would be initialized in CreateServer
+// and then passed into something like "http.ListenAndServe". However when working on the Authentication
+// middleware I found that it was convenient to wrap router in a kind of getter so that I could ensure
+// all routes were handled the way we wanted. Furthermore I appreciated the implicit conversion from
+// a mux.Router to a simple http.Handler, thus isolating user's of our struct from the non standard lib
+// implementation of our functionality. So even though we've since shuffled around the Authentication
+// middleware so that it no longer gets initialized here, I decided to keep router private and instead
+// restrict access to it through public functions where we have a bit more control.
+//
+// I was also playing around with the idea of moving defineRoutes() in here, under the belief
+// that it was more appropriate under a route focused function but this idea was quickly scrapped because
+// it became quickly clear that because Server's only real goal is to, you know, serve http requests, keeping
+// defineRoutes() out of the constructure would only serve to cause Server to be constructed in an incomplete
+// and unusable state.
+func (server *Server) Route() http.Handler {
+	return server.router
 }
