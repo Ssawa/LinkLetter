@@ -14,10 +14,15 @@ type IndexHandlerManager struct {
 	BaseHandlerManager
 }
 
-func (manager IndexHandlerManager) indexHandler(w http.ResponseWriter, r *http.Request) {
+func (manager IndexHandlerManager) index(w http.ResponseWriter, r *http.Request) {
+	manager.templator.RenderTemplate(w, "index.tmpl", nil)
+}
+
+func (manager IndexHandlerManager) login(w http.ResponseWriter, r *http.Request) {
 	manager.templator.RenderTemplate(w, "login.tmpl", nil)
 }
 
 func (manager *IndexHandlerManager) InitRoutes(router *mux.Router) {
-	router.HandleFunc("/", manager.indexHandler)
+	router.HandleFunc("/", manager.index)
+	router.HandleFunc("/login", manager.login)
 }

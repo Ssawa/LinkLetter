@@ -3,14 +3,13 @@ package authentication
 import (
 	"net/http"
 
-	"fmt"
-
 	"github.com/Ssawa/LinkLetter/logger"
 	"github.com/gorilla/sessions"
 )
 
 const (
-	loginPage string = "/login"
+	loginPage   string = "/login"
+	sessionName string = "session"
 )
 
 // This package handles the brunt work of our authentication as well as providing a few
@@ -40,7 +39,7 @@ const (
 // IsAuthenticated determines whether the user's request has a session cookie and if it
 // labels them as authenticated.
 func IsAuthenticated(req *http.Request, cookies *sessions.CookieStore) (bool, error) {
-	session, err := cookies.Get(req, "session")
+	session, err := cookies.Get(req, sessionName)
 	if err != nil {
 		logger.Error.Printf("Encountered error while getting session: %s", err)
 		return false, err
@@ -70,9 +69,16 @@ func AuthProtected(cookies *sessions.CookieStore, next http.Handler) http.Handle
 			auth, err := IsAuthenticated(r, cookies)
 
 			if err != nil {
-				logger.Error.Printf("Encountered error while doing auth middleware: %s", err)
-				http.Error(w, fmt.Sprintf("Encountered error: %s", err), 500)
-				return
+				// I noticed an interesting problem where, because I had been developing another
+				// server on the same port I was testing this application on, I just so happened
+				// to have a cookie set to our same "sessionName" and it was causing me 500 errors
+				// because mux.SecureCookies couldn't decode this unknown format. For this reason,
+				// instead of sending out a 500 error as we originally had it, we'll just treat
+				// it as if it were an unauthenticated state but not fault. This way, if the user
+				// chooses to sign in naturally, their bogus cookie will instead just be overwritten.
+				// Obviously the chances of this coming up "in the field" is unlikely, but as it's
+				// something that came up already, it would be good not to regress
+				logger.Error.Printf("Was unable to determine if user is authenticated, their '%s' cookie may be malformed: %s", sessionName, err)
 			}
 
 			if !auth {
