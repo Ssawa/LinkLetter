@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/Ssawa/LinkLetter/web/auth/authentication"
 	"github.com/gorilla/mux"
 )
 
@@ -22,7 +23,8 @@ func (manager IndexHandlerManager) login(w http.ResponseWriter, r *http.Request)
 	manager.templator.RenderTemplate(w, "login.tmpl", nil)
 }
 
-func (manager *IndexHandlerManager) InitRoutes(router *mux.Router) {
-	router.HandleFunc("/", manager.index)
+func (manager *IndexHandlerManager) InitRoutes(router *mux.Router) http.Handler {
+	router.HandleFunc("/", auth.ProtectedFunc(manager.cookies, manager.index))
 	router.HandleFunc("/login", manager.login)
+	return router
 }

@@ -170,7 +170,11 @@ func (server *Server) initializeManager(prefix string, manager handlers.HandlerM
 	// we need to pass our resources in one at a time.
 
 	manager.InitializeResources(server.db, server.cookies, server.templator, server.conf)
-	manager.InitRoutes(server.router.PathPrefix(prefix).Subrouter())
+
+	newRouter := mux.NewRouter().PathPrefix(prefix).Subrouter()
+	handler := manager.InitRoutes(newRouter)
+
+	server.router.PathPrefix(prefix).Handler(handler)
 }
 
 // Route prepares the server's routes and return an http.handler on which to serve http requests.

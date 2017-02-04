@@ -35,10 +35,18 @@ func TestCreateServer(t *testing.T) {
 	resp := httptest.NewRecorder()
 
 	server.router.ServeHTTP(resp, req)
+	assert.Equal(t, 302, resp.Code)
+
+	req = httptest.NewRequest("GET", "/login", nil)
+	resp = httptest.NewRecorder()
+
+	server.router.ServeHTTP(resp, req)
 	assert.Equal(t, 200, resp.Code)
 }
 
-type DummyHandlerManager struct {
+// #######################################
+
+type dummyHandlerManager struct {
 	InitializeResourcesWasCalled bool
 	InitRoutesWasCalled          bool
 	RootHandlerFuncWasCalled     bool
@@ -46,7 +54,7 @@ type DummyHandlerManager struct {
 	t                            *testing.T
 }
 
-func (manager *DummyHandlerManager) InitializeResources(db *sql.DB, cookies *sessions.CookieStore, templator *template.Templator, conf *config.Config) {
+func (manager *dummyHandlerManager) InitializeResources(db *sql.DB, cookies *sessions.CookieStore, templator *template.Templator, conf *config.Config) {
 	manager.InitializeResourcesWasCalled = true
 	assert.NotNil(manager.t, db)
 	assert.NotNil(manager.t, cookies)
@@ -54,7 +62,7 @@ func (manager *DummyHandlerManager) InitializeResources(db *sql.DB, cookies *ses
 	assert.NotNil(manager.t, conf)
 }
 
-func (manager *DummyHandlerManager) InitRoutes(router *mux.Router) {
+func (manager *dummyHandlerManager) InitRoutes(router *mux.Router) http.Handler {
 	manager.InitRoutesWasCalled = true
 
 	router.HandleFunc("", func(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +72,8 @@ func (manager *DummyHandlerManager) InitRoutes(router *mux.Router) {
 	router.HandleFunc("/nested", func(w http.ResponseWriter, r *http.Request) {
 		manager.NestedHandlerFuncWasCalled = true
 	})
+
+	return router
 }
 
 func TestInitializeManager(t *testing.T) {
@@ -79,7 +89,7 @@ func TestInitializeManager(t *testing.T) {
 		conf:      &config.Config{},
 	}
 
-	testHandlerManager := DummyHandlerManager{false, false, false, false, t}
+	testHandlerManager := dummyHandlerManager{false, false, false, false, t}
 	server.initializeManager("/test", &testHandlerManager)
 	assert.True(t, testHandlerManager.InitializeResourcesWasCalled)
 	assert.True(t, testHandlerManager.InitRoutesWasCalled)
@@ -94,5 +104,57 @@ func TestInitializeManager(t *testing.T) {
 	resp = httptest.NewRecorder()
 	server.router.ServeHTTP(resp, req)
 	assert.Equal(t, 200, resp.Code)
+	assert.True(t, testHandlerManager.NestedHandlerFuncWasCalled)
+}
+
+// ################################
+
+func middlewareTest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+		w.WriteHeader(666)
+	})
+}
+
+type dummyHandlerManager2 struct {
+	RootHandlerFuncWasCalled   bool
+	NestedHandlerFuncWasCalled bool
+}
+
+func (manager *dummyHandlerManager2) InitializeResources(db *sql.DB, cookies *sessions.CookieStore, templator *template.Templator, conf *config.Config) {
+}
+
+func (manager *dummyHandlerManager2) InitRoutes(router *mux.Router) http.Handler {
+	router.HandleFunc("", func(w http.ResponseWriter, r *http.Request) {
+		manager.RootHandlerFuncWasCalled = true
+	})
+
+	router.HandleFunc("/nested", func(w http.ResponseWriter, r *http.Request) {
+		manager.NestedHandlerFuncWasCalled = true
+	})
+
+	return middlewareTest(router)
+}
+
+func TestInitializeManagerAndMiddleware(t *testing.T) {
+	router := mux.NewRouter()
+
+	server := Server{
+		router: router,
+	}
+
+	testHandlerManager := dummyHandlerManager2{}
+	server.initializeManager("/test", &testHandlerManager)
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	resp := httptest.NewRecorder()
+	server.router.ServeHTTP(resp, req)
+	assert.Equal(t, 666, resp.Code)
+	assert.True(t, testHandlerManager.RootHandlerFuncWasCalled)
+
+	req = httptest.NewRequest("GET", "/test/nested", nil)
+	resp = httptest.NewRecorder()
+	server.router.ServeHTTP(resp, req)
+	assert.Equal(t, 666, resp.Code)
 	assert.True(t, testHandlerManager.NestedHandlerFuncWasCalled)
 }

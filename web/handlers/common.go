@@ -6,6 +6,7 @@ package handlers
 
 import (
 	"database/sql"
+	"net/http"
 
 	"github.com/Ssawa/LinkLetter/config"
 	"github.com/Ssawa/LinkLetter/web/template"
@@ -26,7 +27,7 @@ type HandlerManager interface {
 	// InitRoutes initializes all routes onto a Handler (most probably a mux.Router)
 	// where it can be associated with the main server's router at a path prefix
 	// of it's choosing.
-	InitRoutes(*mux.Router)
+	InitRoutes(*mux.Router) http.Handler
 }
 
 // BaseHandlerManager implements the basic functionality of a HandlerManager, such as
@@ -111,5 +112,6 @@ func (manager *BaseHandlerManager) InitializeResources(db *sql.DB, cookies *sess
 // InitRoutes doesn't do much here. Actually it does functionally nothing. It only really exists so that BaseHandlerManager
 // completely implements HandlerManager and to give a more thorough template to those who may wish to "inherit"
 // from BaseHandlerManager.
-func (manager *BaseHandlerManager) InitRoutes(*mux.Router) {
+func (manager *BaseHandlerManager) InitRoutes(router *mux.Router) http.Handler {
+	return router
 }

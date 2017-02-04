@@ -49,20 +49,17 @@ func TestProtectedFunc(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	wrapped(w, httptest.NewRequest("GET", "http://localhost/", nil))
-	resp := w.Result()
-	assert.Equal(t, 302, resp.StatusCode)
-	assert.Equal(t, "/login", resp.Header.Get("Location"))
+	assert.Equal(t, 302, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
 
 	w = httptest.NewRecorder()
 	wrapped(w, authenticatedRequest(cookies, true))
-	resp = w.Result()
-	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, 200, w.Code)
 
 	w = httptest.NewRecorder()
 	wrapped(w, authenticatedRequest(cookies, false))
-	resp = w.Result()
-	assert.Equal(t, 302, resp.StatusCode)
-	assert.Equal(t, "/login", resp.Header.Get("Location"))
+	assert.Equal(t, 302, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
 }
 
 func TestProtectedHandler(t *testing.T) {
@@ -73,18 +70,15 @@ func TestProtectedHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, httptest.NewRequest("GET", "http://localhost/", nil))
-	resp := w.Result()
-	assert.Equal(t, 302, resp.StatusCode)
-	assert.Equal(t, "/login", resp.Header.Get("Location"))
+	assert.Equal(t, 302, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
 
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, authenticatedRequest(cookies, true))
-	resp = w.Result()
-	assert.Equal(t, 404, resp.StatusCode)
+	assert.Equal(t, 404, w.Code)
 
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, authenticatedRequest(cookies, false))
-	resp = w.Result()
-	assert.Equal(t, 302, resp.StatusCode)
-	assert.Equal(t, "/login", resp.Header.Get("Location"))
+	assert.Equal(t, 302, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
 }
