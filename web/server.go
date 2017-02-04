@@ -171,9 +171,58 @@ func (server *Server) initializeManager(prefix string, manager handlers.HandlerM
 
 	manager.InitializeResources(server.db, server.cookies, server.templator, server.conf)
 
+	// The following few lines of code are the end result of a day of exploring gorilla/mux's subrouter logic
+	// and I'm fairly confident that, with the library as it is at the time of writing, this is about as
+	// elegant as we can hope to get it. So why so much ado?
+	//
+	// The problem is that Mux's subrouters don't work well with http middleware. If, for instance, a
+	// HandlerManager wanted to wrap all of it's routes with the authentication middleware (as the majority of
+	// our routes most likely will need to be), each function would need to be wrapped individually and
+	// explicitly with something like:
+	//     auth.ProtectedFunc(manager.cookies, manager.handleRoute())
+	//
+	// which is obviously tedious, ugly, and error prone. The reason is that mux Subrouter's aren't treated
+	// as routers at all by gorilla/mux. Their "ServerHTTP" functions are never actually called, as one may
+	// intuitively believe. Subrouters are only used for their "Match" method so that their routes may be
+	// called directly. And because Subrouters aren't, in fact, routers at all (responsible for, you know,
+	// routing) but only a glorified map, no matter how many ways you try to hack it (and hack it I have tried),
+	// trying to wrap a piece of middleware around them will just not work.
+	//
+	// The solution came inspired by the very helpful gist: https://gist.github.com/danesparza/eb3a63ab55a7cd33923e
+	// Let's walk through the trick line by line:
+
+	// Here we create a new Subrouter, but notice that it is not a subrouter from our server.router, we create
+	// a completely new router object first. PathPrefix and Subrouter have a funny relationship. PathPrefix simply
+	// filters. It matches if the prefix condition is met and invokes its handler, it is not responsible for actually
+	// stripping that prefix for subsequent routes. Meaning if you have something like:
+	//
+	//     server.router.PathPrefix("/test").Handler(handler)
+	//
+	// Path prefix is simply saying to check against the handler if a request like "/test/nested" comes in. That
+	// handler, however, still must account for the full route ("/test/nested", not just "/nested") otherwise
+	// you'll get a 404.
+	//
+	// Subrouter provides the other side of the transaction, it simply modifies the handler that PathPrefix forwards
+	// to so that you don't need to repeat the prefix "/test" in your route definitions.
+	//
+	// So when we call:
+	//     newRouter := mux.NewRouter().PathPrefix(prefix).Subrouter()
+	//
+	// newRouter is simply a handler that will strip off that prefix so that it's routes do not need to define
+	// it explicitly. (Here we're not really using PathPrefix for its filtering functionality, because of the way
+	// mux is written Subrouter just needs it to know what prefix it is to operate on)
 	newRouter := mux.NewRouter().PathPrefix(prefix).Subrouter()
+
+	// InitRoutes takes a *mux.Router and returns a simple interface http.Handler (of which *mux.Router implements).
+	// This means the manager can take that router (which, again, has already been configured to handle the prefix),
+	// set its routes and then simply return the router again, or it can set it's routes, wrap the router in a piece
+	// of middleware, and return the wrapped function. The manager could also simply ignore the router and return
+	// whatever http.Handler it wants; here we make the assumption that the handler knows what it's doing.
 	handler := manager.InitRoutes(newRouter)
 
+	// Now we finally register our new http.Handler with our server's routers. Remember, PathPrefix simply filters
+	// and passes on to it's handler. But now, because we've gone through this whole process, that handler now
+	// also knows how to handle its prefix
 	server.router.PathPrefix(prefix).Handler(handler)
 }
 
