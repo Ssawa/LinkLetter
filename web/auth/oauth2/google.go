@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/Ssawa/LinkLetter/logger"
 )
 
 // These are the basic Google APIs we'll be using
@@ -50,6 +52,7 @@ func (google Google) GenerateAuthorizationURL(redirectURI, clientID, scope strin
 func (google Google) ExtractAuthorizationCode(req *http.Request) (string, error) {
 	err := req.URL.Query().Get("error")
 	if err != "" {
+		logger.Error.Printf("Google authorization error: %s", err)
 		return "", errors.New(err)
 	}
 
@@ -115,6 +118,7 @@ func (google Google) ExtractAccessToken(resp *http.Response) (string, error) {
 	}{}
 	err := json.NewDecoder(resp.Body).Decode(&respBody)
 	if err != nil {
+		logger.Error.Printf("Could not decode json: %s", err)
 		return "", err
 	}
 
@@ -131,6 +135,7 @@ func (google Google) ExtractAccessToken(resp *http.Response) (string, error) {
 func (google Google) Authenticate(accessToken string, pattern *regexp.Regexp) (bool, error) {
 	profile, err := getProfileData(accessToken)
 	if err != nil {
+		logger.Error.Printf("Could not get profile data: %s", err)
 		return false, err
 	}
 
@@ -152,12 +157,14 @@ func getProfileData(accessToken string) (*googleProfileData, error) {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		logger.Error.Printf("Error performing API request: %s", err)
 		return nil, err
 	}
 
 	data := googleProfileData{}
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
+		logger.Error.Printf("Error decoding json: %s", err)
 		return nil, err
 	}
 
