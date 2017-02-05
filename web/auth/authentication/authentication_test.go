@@ -77,6 +77,17 @@ func TestProtectedFunc(t *testing.T) {
 	wrapped(w, authenticatedRequest(cookies, false))
 	assert.Equal(t, 302, w.Code)
 	assert.Equal(t, "/login", w.Header().Get("Location"))
+
+	login = dummyLogin{
+		Cookies:      cookies,
+		authenticate: false,
+	}
+
+	wrapped = ProtectedFunc(login, route)
+
+	w = httptest.NewRecorder()
+	wrapped(w, httptest.NewRequest("GET", "http://localhost/", nil))
+	assert.Equal(t, 200, w.Code)
 }
 
 func TestProtectedHandler(t *testing.T) {
