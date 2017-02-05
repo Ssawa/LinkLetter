@@ -25,14 +25,16 @@ type Config struct {
 	// flags much easier, and not require messy introspection. That alone
 	// could make the process of adding new config options easier.
 
-	WebPort     int
-	SQLPort     int
-	SQLHost     string
-	SQLDB       string
-	SQLUser     string
-	SQLPassword string
-	SQLUseSSL   bool
-	SecretKey   string
+	WebPort            int
+	SQLPort            int
+	SQLHost            string
+	SQLDB              string
+	SQLUser            string
+	SQLPassword        string
+	SQLUseSSL          bool
+	SecretKey          string
+	googleClientID     string
+	googleClientSecret string
 }
 
 // GetEnvStringDefault wraps os.Getenv to get an environment variable as a
@@ -77,13 +79,15 @@ func ParseForConfig() Config {
 		// we should go ahead, admit defeat, and just shear off "LINKLETTER_" from the rest
 		// of env vars? Yeah, would probably reduce confusion. I just don't have the heart to
 		// do it.
-		WebPort:     GetEnvIntDefault("PORT", 8080),
-		SQLPort:     GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
-		SQLHost:     GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
-		SQLDB:       GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),
-		SQLUser:     GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
-		SQLPassword: GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
-		SecretKey:   GetEnvStringDefault("LINKLETTER_SECRETKEY", "secret123"),
+		WebPort:            GetEnvIntDefault("PORT", 8080),
+		SQLPort:            GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
+		SQLHost:            GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
+		SQLDB:              GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),
+		SQLUser:            GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
+		SQLPassword:        GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
+		SecretKey:          GetEnvStringDefault("LINKLETTER_SECRETKEY", "secret123"),
+		googleClientID:     GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_ID", ""),
+		googleClientSecret: GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_SECRET", ""),
 	}
 
 	flag.IntVar(&conf.WebPort, "webPort", conf.WebPort, "The port to run the web application on")
@@ -94,6 +98,8 @@ func ParseForConfig() Config {
 	flag.StringVar(&conf.SQLPassword, "sqlPassword", conf.SQLPassword, "The password to use when conneting to SQL database")
 	flag.BoolVar(&conf.SQLUseSSL, "sqlUseSSL", false, "Whether or not SQL connection should be over SSL")
 	flag.StringVar(&conf.SecretKey, "secretKey", conf.SecretKey, "The secret key to use to sign cookies")
+	flag.StringVar(&conf.googleClientID, "googleClientID", conf.SecretKey, "Google OAuth2 client ID")
+	flag.StringVar(&conf.googleClientSecret, "googleClientSecret", conf.SecretKey, "Google OAuth2 client secret")
 
 	flag.Parse()
 	return conf

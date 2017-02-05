@@ -126,15 +126,30 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 		conf:      &conf,
 	}
 
+	server.defineRoutes()
+
+	return server
+}
+
+// defineRoutes is used for defining the routes you'd like our Server to serve
+func (server *Server) defineRoutes() {
+	// This blindly exposes all files in the static folder, so be very careful about what
+	// you put in there. I'd also like this line to demonstrate that our system is not
+	// dependent on handlers.HandlerManager for routes. HandlerManager is a tool to help us,
+	// but a handler is a handler and we can use whatever we want to define our routes.
+	server.router.PathPrefix("/static/").Handler(
+		http.StripPrefix("/static/", http.FileServer(http.Dir("static"))),
+	)
+
 	// Keep in mind, when setting routes, that gorilla/mux will match with the first
 	// valid path it finds, not necessarily the most specific. So:
-	//     server.Router.PathPrefix("/test")
-	//     server.Router.PathPrefix("/testroute")
+	//     server.router.PathPrefix("/test")
+	//     server.router.PathPrefix("/testroute")
 	//
 	// will match with "/test" for "/testroute/something" before "/testroute". To solve this
 	// simply define routes in descending specificity, such as:
-	//     server.Router.PathPrefix("/testroute")
-	//     server.Router.PathPrefix("/test")
+	//     server.router.PathPrefix("/testroute")
+	//     server.router.PathPrefix("/test")
 	//
 	// In the future we may want to include a helper function that tries to clean up our route
 	// orders for us.
@@ -146,16 +161,6 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 	// we need to get the reference here. It's not very intuitive, and I kind of wish Go would
 	// make up it's mind about whether we need think about pointers or not.
 	server.initializeManager("/", &handlers.IndexHandlerManager{})
-
-	// This blindly exposes all files in the static folder, so be very careful about what
-	// you put in there. I'd also like this line to demonstrate that our system is not
-	// dependent on handlers.HandlerManager for routes. HandlerManager is a tool to help us,
-	// but a handler is a handler and we can use whatever we want to define our routes.
-	server.router.PathPrefix("/static/").Handler(
-		http.StripPrefix("/static/", http.FileServer(http.Dir("static"))),
-	)
-
-	return server
 }
 
 // InitializeManager initializes the handlers.HandlerManager with the server's resource information
