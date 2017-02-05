@@ -9,7 +9,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Ssawa/LinkLetter/config"
-	"github.com/Ssawa/LinkLetter/web/auth/authentication"
 	"github.com/Ssawa/LinkLetter/web/auth/oauth2"
 	"github.com/Ssawa/LinkLetter/web/template"
 	"github.com/gorilla/mux"
@@ -27,7 +26,9 @@ func TestCreateServer(t *testing.T) {
 
 	server := CreateServer(
 		config.Config{
-			SecretKey: "test",
+			SecretKey:          "test",
+			GoogleClientID:     "test",
+			GoogleClientSecret: "test",
 		},
 		db,
 	)
@@ -55,7 +56,7 @@ type dummyHandlerManager struct {
 	t                            *testing.T
 }
 
-func (manager *dummyHandlerManager) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login authentication.Login) {
+func (manager *dummyHandlerManager) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login oauth2.OAuth2Login) {
 	manager.InitializeResourcesWasCalled = true
 	assert.NotNil(manager.t, db)
 	assert.NotNil(manager.t, login)
@@ -122,7 +123,7 @@ type dummyHandlerManager2 struct {
 	NestedHandlerFuncWasCalled bool
 }
 
-func (manager *dummyHandlerManager2) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login authentication.Login) {
+func (manager *dummyHandlerManager2) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login oauth2.OAuth2Login) {
 }
 
 func (manager *dummyHandlerManager2) InitRoutes(router *mux.Router) http.Handler {

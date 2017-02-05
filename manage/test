@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
 cd `dirname $0`
 cd ../
 
-go test -v $(go list ./... | grep -v /vendor/)
+if go test -v $(go list ./... | grep -v /vendor/); then
+    echo
+    echo -e "${GREEN}All tests passed successfully!${NC}"
+    exit 0
+else
+    echo
+    echo -e "${RED}Tests failed${NC}"
+    exit 1
+fi

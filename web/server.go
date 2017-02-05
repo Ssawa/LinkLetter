@@ -102,7 +102,6 @@ import (
 	"fmt"
 
 	"github.com/Ssawa/LinkLetter/config"
-	"github.com/Ssawa/LinkLetter/web/auth/authentication"
 	"github.com/Ssawa/LinkLetter/web/auth/oauth2"
 	"github.com/Ssawa/LinkLetter/web/handlers"
 	"github.com/Ssawa/LinkLetter/web/template"
@@ -118,7 +117,7 @@ type Server struct {
 	templator *template.Templator
 	cookies   *sessions.CookieStore
 	conf      *config.Config
-	login     authentication.Login
+	login     oauth2.OAuth2Login
 }
 
 // CreateServer creates an instance of Server using the supplied config and database connection.
@@ -173,6 +172,7 @@ func (server *Server) defineRoutes() {
 	// Essentially, because BaseHandlerManager needs its pointer passed in for InitializeResources
 	// we need to get the reference here. It's not very intuitive, and I kind of wish Go would
 	// make up it's mind about whether we need think about pointers or not.
+	server.initializeManager("/login", &handlers.LoginHandlerManager{})
 	server.initializeManager("/", &handlers.IndexHandlerManager{})
 }
 

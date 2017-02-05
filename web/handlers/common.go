@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/Ssawa/LinkLetter/config"
-	auth "github.com/Ssawa/LinkLetter/web/auth/authentication"
+	"github.com/Ssawa/LinkLetter/web/auth/oauth2"
 	"github.com/Ssawa/LinkLetter/web/template"
 	"github.com/gorilla/mux"
 )
@@ -22,7 +22,7 @@ type HandlerManager interface {
 	// InitializeResources is where the web server is expected to pass its resources
 	// into the handler, where they can be stored by the implementing struct for
 	// use by it's handlers.
-	InitializeResources(*sql.DB, *template.Templator, *config.Config, auth.Login)
+	InitializeResources(*sql.DB, *template.Templator, *config.Config, oauth2.OAuth2Login)
 
 	// InitRoutes initializes all routes onto a Handler (most probably a mux.Router)
 	// where it can be associated with the main server's router at a path prefix
@@ -95,14 +95,14 @@ type HandlerManager interface {
 // as I'd very much be interested in learning it.
 type BaseHandlerManager struct {
 	db        *sql.DB
-	login     auth.Login
+	login     oauth2.OAuth2Login
 	templator *template.Templator
 	conf      *config.Config
 }
 
 // InitializeResources handles the base functionality of taking the resource references from the Server and storing
 // them for use by our handlers.
-func (manager *BaseHandlerManager) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login auth.Login) {
+func (manager *BaseHandlerManager) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login oauth2.OAuth2Login) {
 	manager.db = db
 	manager.templator = templator
 	manager.conf = conf

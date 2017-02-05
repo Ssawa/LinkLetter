@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 RED='\033[0;31m'
+GREEN='\033[0;32m'
 NC='\033[0m'
 
 GODEP=$GOPATH/bin/godep
@@ -11,7 +12,10 @@ fi
 
 $GODEP save -t
 
-if ! ./`dirname $0`/test ; then
+if ./`dirname $0`/test ; then
+    echo
+    echo -e "${GREEN}You should be okay to commit.${NC}"
+else
     echo
     echo -e "${RED}There are errors in your tests that should be resolved before committing.${NC}"
 fi
