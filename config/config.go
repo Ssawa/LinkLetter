@@ -32,9 +32,10 @@ type Config struct {
 	SQLUser            string
 	SQLPassword        string
 	SQLUseSSL          bool
+	URLBase            string
 	SecretKey          string
-	googleClientID     string
-	googleClientSecret string
+	GoogleClientID     string
+	GoogleClientSecret string
 }
 
 // GetEnvStringDefault wraps os.Getenv to get an environment variable as a
@@ -86,8 +87,9 @@ func ParseForConfig() Config {
 		SQLUser:            GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
 		SQLPassword:        GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
 		SecretKey:          GetEnvStringDefault("LINKLETTER_SECRETKEY", "secret123"),
-		googleClientID:     GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_ID", ""),
-		googleClientSecret: GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_SECRET", ""),
+		URLBase:            GetEnvStringDefault("LINKLETTER_URLBASE", "http://localhost:8080"),
+		GoogleClientID:     GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret: GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_SECRET", ""),
 	}
 
 	flag.IntVar(&conf.WebPort, "webPort", conf.WebPort, "The port to run the web application on")
@@ -98,8 +100,9 @@ func ParseForConfig() Config {
 	flag.StringVar(&conf.SQLPassword, "sqlPassword", conf.SQLPassword, "The password to use when conneting to SQL database")
 	flag.BoolVar(&conf.SQLUseSSL, "sqlUseSSL", false, "Whether or not SQL connection should be over SSL")
 	flag.StringVar(&conf.SecretKey, "secretKey", conf.SecretKey, "The secret key to use to sign cookies")
-	flag.StringVar(&conf.googleClientID, "googleClientID", conf.SecretKey, "Google OAuth2 client ID")
-	flag.StringVar(&conf.googleClientSecret, "googleClientSecret", conf.SecretKey, "Google OAuth2 client secret")
+	flag.StringVar(&conf.URLBase, "urlBase", conf.URLBase, "The base URL path the webserver will be hosted at (will be used for OAuth2 redirect url generation)")
+	flag.StringVar(&conf.GoogleClientID, "googleClientID", conf.GoogleClientID, "Google OAuth2 client ID")
+	flag.StringVar(&conf.GoogleClientSecret, "googleClientSecret", conf.GoogleClientSecret, "Google OAuth2 client secret")
 
 	flag.Parse()
 	return conf

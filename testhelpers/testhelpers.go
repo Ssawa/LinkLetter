@@ -1,4 +1,4 @@
-package web
+package testhelpers
 
 import "net/http"
 

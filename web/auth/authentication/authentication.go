@@ -1,4 +1,4 @@
-package auth
+package authentication
 
 import (
 	"net/http"
@@ -11,6 +11,11 @@ const (
 	loginPage   string = "/login"
 	sessionName string = "session"
 )
+
+type Login interface {
+	ShouldAuthenticate() bool
+	GetCookies() *sessions.CookieStore
+}
 
 // This package handles the brunt work of our authentication as well as providing a few
 // helper methods. The general process for authentication will be:
@@ -56,9 +61,12 @@ func IsAuthenticated(req *http.Request, cookies *sessions.CookieStore) (bool, er
 // ProtectedFunc is an http middleware that wraps an http.handlerfunc and checks if a user is authenticated. If the user
 // isn't then he/she is redirected to /login, if the user is, then the request continues
 // normally
-func ProtectedFunc(cookies *sessions.CookieStore, wrap func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+func ProtectedFunc(login Login, wrap func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+	if !login.ShouldAuthenticate() {
+		return wrap
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		auth, err := IsAuthenticated(r, cookies)
+		auth, err := IsAuthenticated(r, login.GetCookies())
 
 		if err != nil {
 			// I noticed an interesting problem where, because I had been developing another
@@ -103,6 +111,6 @@ func ProtectedFunc(cookies *sessions.CookieStore, wrap func(w http.ResponseWrite
 // and http.handler and will leave the actual implementation details to some other package.
 //
 // Why am I telling you this? I just needed to bitch about how I spent my Saturday morning.
-func ProtectedHandler(cookies *sessions.CookieStore, next http.Handler) http.Handler {
-	return ProtectedFunc(cookies, next.ServeHTTP)
+func ProtectedHandler(login Login, next http.Handler) http.Handler {
+	return ProtectedFunc(login, next.ServeHTTP)
 }

@@ -9,9 +9,10 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Ssawa/LinkLetter/config"
+	"github.com/Ssawa/LinkLetter/web/auth/authentication"
+	"github.com/Ssawa/LinkLetter/web/auth/oauth2"
 	"github.com/Ssawa/LinkLetter/web/template"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,10 +55,10 @@ type dummyHandlerManager struct {
 	t                            *testing.T
 }
 
-func (manager *dummyHandlerManager) InitializeResources(db *sql.DB, cookies *sessions.CookieStore, templator *template.Templator, conf *config.Config) {
+func (manager *dummyHandlerManager) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login authentication.Login) {
 	manager.InitializeResourcesWasCalled = true
 	assert.NotNil(manager.t, db)
-	assert.NotNil(manager.t, cookies)
+	assert.NotNil(manager.t, login)
 	assert.NotNil(manager.t, templator)
 	assert.NotNil(manager.t, conf)
 }
@@ -85,7 +86,7 @@ func TestInitializeManager(t *testing.T) {
 		router:    router,
 		db:        db,
 		templator: new(template.Templator),
-		cookies:   sessions.NewCookieStore([]byte("secret")),
+		login:     oauth2.OAuth2Login{},
 		conf:      &config.Config{},
 	}
 
@@ -121,7 +122,7 @@ type dummyHandlerManager2 struct {
 	NestedHandlerFuncWasCalled bool
 }
 
-func (manager *dummyHandlerManager2) InitializeResources(db *sql.DB, cookies *sessions.CookieStore, templator *template.Templator, conf *config.Config) {
+func (manager *dummyHandlerManager2) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login authentication.Login) {
 }
 
 func (manager *dummyHandlerManager2) InitRoutes(router *mux.Router) http.Handler {

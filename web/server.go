@@ -99,7 +99,11 @@ import (
 	"database/sql"
 	"net/http"
 
+	"fmt"
+
 	"github.com/Ssawa/LinkLetter/config"
+	"github.com/Ssawa/LinkLetter/web/auth/authentication"
+	"github.com/Ssawa/LinkLetter/web/auth/oauth2"
 	"github.com/Ssawa/LinkLetter/web/handlers"
 	"github.com/Ssawa/LinkLetter/web/template"
 	"github.com/gorilla/mux"
@@ -114,16 +118,25 @@ type Server struct {
 	templator *template.Templator
 	cookies   *sessions.CookieStore
 	conf      *config.Config
+	login     authentication.Login
 }
 
 // CreateServer creates an instance of Server using the supplied config and database connection.
 func CreateServer(conf config.Config, db *sql.DB) Server {
+	cookiesStore := sessions.NewCookieStore([]byte(conf.SecretKey))
 	server := Server{
 		router:    mux.NewRouter(),
 		db:        db,
 		templator: template.CreateDefaultTemplator(),
-		cookies:   sessions.NewCookieStore([]byte(conf.SecretKey)),
+		cookies:   cookiesStore,
 		conf:      &conf,
+		login: oauth2.OAuth2Login{
+			ClientID:       conf.GoogleClientID,
+			ClientSecret:   conf.GoogleClientSecret,
+			RedirectURL:    fmt.Sprintf("%s/auth/oauth2/google", conf.URLBase),
+			Cookies:        cookiesStore,
+			OAuth2Provider: oauth2.Google{},
+		},
 	}
 
 	server.defineRoutes()
@@ -174,7 +187,7 @@ func (server *Server) initializeManager(prefix string, manager handlers.HandlerM
 	// In C that could have been mitigated with a forward declaration but Go doesn't have them, so instead
 	// we need to pass our resources in one at a time.
 
-	manager.InitializeResources(server.db, server.cookies, server.templator, server.conf)
+	manager.InitializeResources(server.db, server.templator, server.conf, server.login)
 
 	// The following few lines of code are the end result of a day of exploring gorilla/mux's subrouter logic
 	// and I'm fairly confident that, with the library as it is at the time of writing, this is about as

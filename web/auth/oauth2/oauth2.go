@@ -54,6 +54,8 @@ package oauth2
 import (
 	"net/http"
 	"regexp"
+
+	"github.com/gorilla/sessions"
 )
 
 // OAuth2 handles interaction with OAuth2 servers in a generalized fashion.
@@ -169,4 +171,24 @@ type OAuth2 interface {
 	// I wasted so much time trying to think of how to generalize this that I just wasn't doing anything so I'm putting those problems
 	// off until the future.
 	Authenticate(accessToken string, pattern *regexp.Regexp) (bool, error)
+}
+
+type OAuth2Login struct {
+	ClientID       string
+	ClientSecret   string
+	RedirectURL    string
+	OAuth2Provider OAuth2
+	Cookies        *sessions.CookieStore
+}
+
+func (login OAuth2Login) ShouldAuthenticate() bool {
+	return login.ClientID != "" && login.ClientSecret != ""
+}
+
+func (login OAuth2Login) GetCookies() *sessions.CookieStore {
+	return login.Cookies
+}
+
+func (login OAuth2Login) GetAuthorizationURL() string {
+	return login.OAuth2Provider.GenerateAuthorizationURL(login.RedirectURL, login.ClientID, "email")
 }

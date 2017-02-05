@@ -9,9 +9,9 @@ import (
 	"net/http"
 
 	"github.com/Ssawa/LinkLetter/config"
+	auth "github.com/Ssawa/LinkLetter/web/auth/authentication"
 	"github.com/Ssawa/LinkLetter/web/template"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 )
 
 // A HandlerManager is responsible for containing and initializing one or more handlers
@@ -22,7 +22,7 @@ type HandlerManager interface {
 	// InitializeResources is where the web server is expected to pass its resources
 	// into the handler, where they can be stored by the implementing struct for
 	// use by it's handlers.
-	InitializeResources(*sql.DB, *sessions.CookieStore, *template.Templator, *config.Config)
+	InitializeResources(*sql.DB, *template.Templator, *config.Config, auth.Login)
 
 	// InitRoutes initializes all routes onto a Handler (most probably a mux.Router)
 	// where it can be associated with the main server's router at a path prefix
@@ -95,18 +95,18 @@ type HandlerManager interface {
 // as I'd very much be interested in learning it.
 type BaseHandlerManager struct {
 	db        *sql.DB
-	cookies   *sessions.CookieStore
+	login     auth.Login
 	templator *template.Templator
 	conf      *config.Config
 }
 
 // InitializeResources handles the base functionality of taking the resource references from the Server and storing
 // them for use by our handlers.
-func (manager *BaseHandlerManager) InitializeResources(db *sql.DB, cookies *sessions.CookieStore, templator *template.Templator, conf *config.Config) {
+func (manager *BaseHandlerManager) InitializeResources(db *sql.DB, templator *template.Templator, conf *config.Config, login auth.Login) {
 	manager.db = db
-	manager.cookies = cookies
 	manager.templator = templator
 	manager.conf = conf
+	manager.login = login
 }
 
 // InitRoutes doesn't do much here. Actually it does functionally nothing. It only really exists so that BaseHandlerManager

@@ -10,7 +10,7 @@ import (
 
 	"net/url"
 
-	"github.com/Ssawa/LinkLetter/web"
+	"github.com/Ssawa/LinkLetter/testhelpers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func TestGoogleGenerateAuthorizationURL(t *testing.T) {
 	google := Google{}
 
 	expected := "https://accounts.google.com/o/oauth2/v2/auth?client_id=1234&prompt=select_account&redirect_uri=https%3A%2F%2Flocalhost.com&response_type=code&scope=email"
-	assert.Equal(t, expected, google.GenerateAuthorizationURL("https://localhost.com", "1234", "email").String())
+	assert.Equal(t, expected, google.GenerateAuthorizationURL("https://localhost.com", "1234", "email"))
 }
 
 func TestGoogleExtractAuthorizationCode(t *testing.T) {
@@ -71,7 +71,7 @@ func TestGoogleExtractAccessToken(t *testing.T) {
 }
 
 func TestGoogleAuthenticate(t *testing.T) {
-	transport := web.FakeTransport(func(req *http.Request) (*http.Response, error) {
+	transport := testhelpers.FakeTransport(func(req *http.Request) (*http.Response, error) {
 		resp := httptest.NewRecorder()
 		resp.Code = 200
 		resp.WriteString(`
@@ -97,7 +97,7 @@ func TestGoogleAuthenticate(t *testing.T) {
 }
 
 func TestGoogleGetProfileData(t *testing.T) {
-	transport := web.FakeTransport(func(req *http.Request) (*http.Response, error) {
+	transport := testhelpers.FakeTransport(func(req *http.Request) (*http.Response, error) {
 		assert.Equal(t, "Bearer theToken", req.Header.Get("Authorization"))
 		resp := httptest.NewRecorder()
 		resp.Code = 200

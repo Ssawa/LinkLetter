@@ -31,12 +31,11 @@ type googleProfileData struct {
 }
 
 // Google is an object in which to assign our OAuth2 method implementations
-type Google struct {
-}
+type Google struct{}
 
 // GenerateAuthorizationURL generates a URL to google's OAuth2 service so that a user can
 // give us permission to access their account
-func (google Google) GenerateAuthorizationURL(redirectURI, clientID, scope string) *url.URL {
+func (google Google) GenerateAuthorizationURL(redirectURI, clientID, scope string) string {
 	u, _ := url.Parse(baseAuthURL)
 	query := u.Query()
 	query.Set("scope", scope)
@@ -45,7 +44,7 @@ func (google Google) GenerateAuthorizationURL(redirectURI, clientID, scope strin
 	query.Set("prompt", "select_account")
 	query.Set("response_type", "code")
 	u.RawQuery = query.Encode()
-	return u
+	return u.String()
 }
 
 // ExtractAuthorizationCode pulls out the authorization code from the request if it exists
