@@ -8,9 +8,19 @@ import (
 )
 
 const (
-	loginPage   string = "/login"
-	sessionName string = "session"
+	loginPage         string = "/login"
+	sessionName       string = "session"
+	authenticationKey string = "isAuthenticated"
 )
+
+func LogInUser(cookies *sessions.CookieStore, req *http.Request, w http.ResponseWriter) (err error) {
+	session, err := cookies.Get(req, sessionName)
+	if err == nil {
+		session.Values[authenticationKey] = true
+		session.Save(req, w)
+	}
+	return
+}
 
 type Login interface {
 	ShouldAuthenticate() bool
@@ -50,7 +60,7 @@ func IsAuthenticated(req *http.Request, cookies *sessions.CookieStore) (bool, er
 		return false, err
 	}
 
-	val := session.Values["isAuthenticated"]
+	val := session.Values[authenticationKey]
 	if authenticated, ok := val.(bool); ok {
 		return authenticated, nil
 	}

@@ -55,6 +55,8 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/Ssawa/LinkLetter/logger"
+	"github.com/Ssawa/LinkLetter/web/auth/authentication"
 	"github.com/gorilla/sessions"
 )
 
@@ -174,11 +176,13 @@ type OAuth2 interface {
 }
 
 type OAuth2Login struct {
-	ClientID       string
-	ClientSecret   string
-	RedirectURL    string
-	OAuth2Provider OAuth2
-	Cookies        *sessions.CookieStore
+	ClientID              string
+	ClientSecret          string
+	AuthenticationPattern *regexp.Regexp
+	RedirectURL           string
+	Scope                 string
+	OAuth2Provider        OAuth2
+	Cookies               *sessions.CookieStore
 }
 
 func (login OAuth2Login) ShouldAuthenticate() bool {
@@ -190,5 +194,45 @@ func (login OAuth2Login) GetCookies() *sessions.CookieStore {
 }
 
 func (login OAuth2Login) GetAuthorizationURL() string {
-	return login.OAuth2Provider.GenerateAuthorizationURL(login.RedirectURL, login.ClientID, "email")
+	return login.OAuth2Provider.GenerateAuthorizationURL(login.RedirectURL, login.ClientID, login.Scope)
+}
+
+func (login OAuth2Login) AuthorizationCallbackHandler(w http.ResponseWriter, req *http.Request) {
+	authCode, err := login.OAuth2Provider.ExtractAuthorizationCode(req)
+	if err != nil {
+		logger.Error.Printf("Was unable to get authorization code for login: %s", err)
+		http.Error(w, "Was unable to log you into the system", 500)
+		return
+	}
+
+	tokenReq := login.OAuth2Provider.GenerateAccessTokenRequest(authCode, login.RedirectURL, login.ClientID, login.ClientSecret)
+	tokenResp, err := http.DefaultClient.Do(tokenReq)
+	if err != nil {
+		logger.Error.Printf("Was unable to get access token code for login: %s", err)
+		http.Error(w, "Was unable to log you into the system", 500)
+		return
+	}
+
+	token, err := login.OAuth2Provider.ExtractAccessToken(tokenResp)
+	if err != nil {
+		logger.Error.Printf("Was unable to extract access token code for login: %s", err)
+		http.Error(w, "Was unable to log you into the system", 500)
+		return
+	}
+
+	authenticated, err := login.OAuth2Provider.Authenticate(token, login.AuthenticationPattern)
+	if err != nil {
+		logger.Error.Printf("Error occurred while authenticating: %s", err)
+		http.Error(w, "An error occurred while trying to authenticate you", 500)
+		return
+	}
+
+	if !authenticated {
+		http.Error(w, "Unfortunately you are not allowed to access this site", 403)
+		return
+	}
+
+	// Redirect the, now authenticated, user back to the index page
+	authentication.LogInUser(login.Cookies, req, w)
+	http.Redirect(w, req, "/", 302)
 }

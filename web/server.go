@@ -132,7 +132,8 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 		login: oauth2.OAuth2Login{
 			ClientID:       conf.GoogleClientID,
 			ClientSecret:   conf.GoogleClientSecret,
-			RedirectURL:    fmt.Sprintf("%s/auth/oauth2/google", conf.URLBase),
+			Scope:          "email",
+			RedirectURL:    fmt.Sprintf("%s/login/auth/oauth2/google", conf.URLBase),
 			Cookies:        cookiesStore,
 			OAuth2Provider: oauth2.Google{},
 		},
