@@ -25,17 +25,18 @@ type Config struct {
 	// flags much easier, and not require messy introspection. That alone
 	// could make the process of adding new config options easier.
 
-	WebPort            int
-	SQLPort            int
-	SQLHost            string
-	SQLDB              string
-	SQLUser            string
-	SQLPassword        string
-	SQLUseSSL          bool
-	URLBase            string
-	SecretKey          string
-	GoogleClientID     string
-	GoogleClientSecret string
+	WebPort              int
+	SQLPort              int
+	SQLHost              string
+	SQLDB                string
+	SQLUser              string
+	SQLPassword          string
+	SQLUseSSL            bool
+	URLBase              string
+	SecretKey            string
+	AuthorizationPattern string
+	GoogleClientID       string
+	GoogleClientSecret   string
 }
 
 // GetEnvStringDefault wraps os.Getenv to get an environment variable as a
@@ -80,16 +81,17 @@ func ParseForConfig() Config {
 		// we should go ahead, admit defeat, and just shear off "LINKLETTER_" from the rest
 		// of env vars? Yeah, would probably reduce confusion. I just don't have the heart to
 		// do it.
-		WebPort:            GetEnvIntDefault("PORT", 8080),
-		SQLPort:            GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
-		SQLHost:            GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
-		SQLDB:              GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),
-		SQLUser:            GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
-		SQLPassword:        GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
-		SecretKey:          GetEnvStringDefault("LINKLETTER_SECRETKEY", "secret123"),
-		URLBase:            GetEnvStringDefault("LINKLETTER_URLBASE", "http://localhost:8080"),
-		GoogleClientID:     GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_ID", ""),
-		GoogleClientSecret: GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_SECRET", ""),
+		WebPort:              GetEnvIntDefault("PORT", 8080),
+		SQLPort:              GetEnvIntDefault("LINKLETTER_SQLPORT", 9753),
+		SQLHost:              GetEnvStringDefault("LINKLETTER_SQLHOST", "127.0.0.1"),
+		SQLDB:                GetEnvStringDefault("LINKLETTER_SQLDB", "linkletter"),
+		SQLUser:              GetEnvStringDefault("LINKLETTER_SQLUSER", "linkletter"),
+		SQLPassword:          GetEnvStringDefault("LINKLETTER_SQLPASSWORD", "pass"),
+		SecretKey:            GetEnvStringDefault("LINKLETTER_SECRETKEY", "secret123"),
+		URLBase:              GetEnvStringDefault("LINKLETTER_URLBASE", "http://localhost:8080"),
+		AuthorizationPattern: GetEnvStringDefault("LINKLETTER_AUTHORIZATIONPATTERN", "localprojects\\.(com|net)"),
+		GoogleClientID:       GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:   GetEnvStringDefault("LINKLETTER_GOOGLE_CLIENT_SECRET", ""),
 	}
 
 	flag.IntVar(&conf.WebPort, "webPort", conf.WebPort, "The port to run the web application on")
@@ -101,6 +103,7 @@ func ParseForConfig() Config {
 	flag.BoolVar(&conf.SQLUseSSL, "sqlUseSSL", false, "Whether or not SQL connection should be over SSL")
 	flag.StringVar(&conf.SecretKey, "secretKey", conf.SecretKey, "The secret key to use to sign cookies")
 	flag.StringVar(&conf.URLBase, "urlBase", conf.URLBase, "The base URL path the webserver will be hosted at (will be used for OAuth2 redirect url generation)")
+	flag.StringVar(&conf.AuthorizationPattern, "authorizationPattern", conf.AuthorizationPattern, "The regex pattern to match against hosted domains for authorization")
 	flag.StringVar(&conf.GoogleClientID, "googleClientID", conf.GoogleClientID, "Google OAuth2 client ID")
 	flag.StringVar(&conf.GoogleClientSecret, "googleClientSecret", conf.GoogleClientSecret, "Google OAuth2 client secret")
 

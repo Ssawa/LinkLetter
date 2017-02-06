@@ -17,5 +17,6 @@ func (manager LoginHandlerManager) loginFunc(w http.ResponseWriter, r *http.Requ
 
 func (manager *LoginHandlerManager) InitRoutes(router *mux.Router) http.Handler {
 	router.HandleFunc("", manager.loginFunc)
+	router.HandleFunc("/auth/oauth2/google", manager.login.AuthorizationCallbackHandler)
 	return router
 }

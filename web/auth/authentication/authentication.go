@@ -13,6 +13,7 @@ const (
 	authenticationKey string = "isAuthenticated"
 )
 
+// LogInUser sets the user's cookies so that their session represents them as logged in
 func LogInUser(cookies *sessions.CookieStore, req *http.Request, w http.ResponseWriter) (err error) {
 	session, err := cookies.Get(req, sessionName)
 	if err == nil {
@@ -22,8 +23,14 @@ func LogInUser(cookies *sessions.CookieStore, req *http.Request, w http.Response
 	return
 }
 
+// Login is a general interface for determining if a user is logged in or not
 type Login interface {
+	// ShouldAuthenticate tries to determine if the authentication process should even be attempted.
+	// This might be useful for cases where somebody would still like to develop and test site changes
+	// but not necessarily setup OAuth2 client ids and secrets
 	ShouldAuthenticate() bool
+
+	// GetCookies returns a cookie store so that we can determine what their authentication status is
 	GetCookies() *sessions.CookieStore
 }
 

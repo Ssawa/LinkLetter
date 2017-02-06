@@ -175,28 +175,36 @@ type OAuth2 interface {
 	Authenticate(accessToken string, pattern *regexp.Regexp) (bool, error)
 }
 
+// OAuth2Login implements the OAuth2 login logic using the OAuth2Provider of the user's choice
 type OAuth2Login struct {
-	ClientID              string
-	ClientSecret          string
-	AuthenticationPattern *regexp.Regexp
-	RedirectURL           string
-	Scope                 string
-	OAuth2Provider        OAuth2
-	Cookies               *sessions.CookieStore
+	ClientID             string
+	ClientSecret         string
+	AuthorizationPattern *regexp.Regexp
+	RedirectURL          string
+	Scope                string
+	OAuth2Provider       OAuth2
+	Cookies              *sessions.CookieStore
 }
 
+// ShouldAuthenticate looks at the client id and client secret to determine if we should attempt
+// authentication
 func (login OAuth2Login) ShouldAuthenticate() bool {
 	return login.ClientID != "" && login.ClientSecret != ""
 }
 
+// GetCookies returns the stored CookieStore
 func (login OAuth2Login) GetCookies() *sessions.CookieStore {
 	return login.Cookies
 }
 
+// GetAuthorizationURL passes in the necessary parameters to the oauth2provider to generate an authorization url
 func (login OAuth2Login) GetAuthorizationURL() string {
 	return login.OAuth2Provider.GenerateAuthorizationURL(login.RedirectURL, login.ClientID, login.Scope)
 }
 
+// AuthorizationCallbackHandler handles the response to our RedirectURL to perform the OAuth2 logic of retrieving
+// the authorization code, access token, and finally determining if the client is actually authorized for our
+// application.
 func (login OAuth2Login) AuthorizationCallbackHandler(w http.ResponseWriter, req *http.Request) {
 	authCode, err := login.OAuth2Provider.ExtractAuthorizationCode(req)
 	if err != nil {
@@ -220,7 +228,7 @@ func (login OAuth2Login) AuthorizationCallbackHandler(w http.ResponseWriter, req
 		return
 	}
 
-	authenticated, err := login.OAuth2Provider.Authenticate(token, login.AuthenticationPattern)
+	authenticated, err := login.OAuth2Provider.Authenticate(token, login.AuthorizationPattern)
 	if err != nil {
 		logger.Error.Printf("Error occurred while authenticating: %s", err)
 		http.Error(w, "An error occurred while trying to authenticate you", 500)

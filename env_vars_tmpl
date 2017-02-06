@@ -1,0 +1,14 @@
+# Copy this file to env_vars, update the configuration as needed, and then run "source env_vars" for them to get
+# set
+
+export PORT="8080"
+export LINKLETTER_SQLPORT="9753"
+export LINKLETTER_SQLHOST="127.0.0.1"
+export LINKLETTER_SQLDB="linkletter"
+export LINKLETTER_SQLUSER="linkletter"
+export LINKLETTER_SQLPASSWORD="pass"
+export LINKLETTER_SECRETKEY="secret123"
+export LINKLETTER_URLBASE="http://localhost:8080"
+export LINKLETTER_AUTHORIZATIONPATTERN="localprojects\\.(com|net)"
+export LINKLETTER_GOOGLE_CLIENT_ID=""
+export LINKLETTER_GOOGLE_CLIENT_SECRET=""

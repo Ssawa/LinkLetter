@@ -101,7 +101,10 @@ import (
 
 	"fmt"
 
+	"regexp"
+
 	"github.com/Ssawa/LinkLetter/config"
+	"github.com/Ssawa/LinkLetter/logger"
 	"github.com/Ssawa/LinkLetter/web/auth/oauth2"
 	"github.com/Ssawa/LinkLetter/web/handlers"
 	"github.com/Ssawa/LinkLetter/web/template"
@@ -123,6 +126,12 @@ type Server struct {
 // CreateServer creates an instance of Server using the supplied config and database connection.
 func CreateServer(conf config.Config, db *sql.DB) Server {
 	cookiesStore := sessions.NewCookieStore([]byte(conf.SecretKey))
+	pattern, err := regexp.Compile(conf.AuthorizationPattern)
+	if err != nil {
+		logger.Error.Printf("Unable to compile the string: '%s' into a regular expression. Aborting for security: %s", conf.AuthorizationPattern, err)
+		panic(err)
+	}
+
 	server := Server{
 		router:    mux.NewRouter(),
 		db:        db,
@@ -130,13 +139,19 @@ func CreateServer(conf config.Config, db *sql.DB) Server {
 		cookies:   cookiesStore,
 		conf:      &conf,
 		login: oauth2.OAuth2Login{
-			ClientID:       conf.GoogleClientID,
-			ClientSecret:   conf.GoogleClientSecret,
-			Scope:          "email",
-			RedirectURL:    fmt.Sprintf("%s/login/auth/oauth2/google", conf.URLBase),
-			Cookies:        cookiesStore,
-			OAuth2Provider: oauth2.Google{},
+			ClientID:             conf.GoogleClientID,
+			ClientSecret:         conf.GoogleClientSecret,
+			Scope:                "email",
+			RedirectURL:          fmt.Sprintf("%s/login/auth/oauth2/google", conf.URLBase),
+			AuthorizationPattern: pattern,
+			Cookies:              cookiesStore,
+			OAuth2Provider:       oauth2.Google{},
 		},
+	}
+
+	if !server.login.ShouldAuthenticate() {
+		logger.Warning.Printf("You configuration does not support authentication so it will be disabled. This is fine for development purposes " +
+			"but is a serious security concern if this is happening on production. If you wish to enable authentication than please update your configuration.")
 	}
 
 	server.defineRoutes()
