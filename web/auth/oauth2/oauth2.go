@@ -55,8 +55,8 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/Ssawa/LinkLetter/logger"
-	"github.com/Ssawa/LinkLetter/web/auth/authentication"
+	"github.com/cj-dimaggio/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/web/auth/authentication"
 	"github.com/gorilla/sessions"
 )
 

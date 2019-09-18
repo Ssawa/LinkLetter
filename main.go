@@ -89,7 +89,7 @@ package main
 //    get compiled into my application?
 // A: Yes it does.
 //
-// Q: github.com/Ssawa/LinkLetter isn't actually a URL to a git repo, that leads to an HTML page. How does
+// Q: github.com/cj-dimaggio/LinkLetter isn't actually a URL to a git repo, that leads to an HTML page. How does
 //    Go know how to get an actual repo out of that?
 // A: Go has to hardcode this information into the Go binary for sites like Github and BitBucket.
 //
@@ -103,7 +103,7 @@ package main
 //    dependent on them and trust them to always be available. Besides, who ever heard of a repo hosting service
 //    going down? (https://code.google.com/)
 //
-// Q: What if I want to fork a project? Like github.com/Ssawa/LinkLetter to github.com/LocalProjects/LinkLetter?
+// Q: What if I want to fork a project? Like github.com/cj-dimaggio/LinkLetter to github.com/LocalProjects/LinkLetter?
 // A: Well Go doesn't support relative imports, so you'll have to run a find and replace across your entire project
 //    and change all your source code.
 //
@@ -122,10 +122,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Ssawa/LinkLetter/config"
-	"github.com/Ssawa/LinkLetter/database"
-	"github.com/Ssawa/LinkLetter/logger"
-	"github.com/Ssawa/LinkLetter/web"
+	"github.com/cj-dimaggio/LinkLetter/config"
+	"github.com/cj-dimaggio/LinkLetter/database"
+	"github.com/cj-dimaggio/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/web"
 )
 
 // Here it is, the entry point into our system. It's a main function just like most other programming languages.

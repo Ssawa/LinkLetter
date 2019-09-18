@@ -8,7 +8,7 @@ import (
 
 	"net/http/httptest"
 
-	"github.com/Ssawa/LinkLetter/testhelpers"
+	"github.com/cj-dimaggio/LinkLetter/testhelpers"
 	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/assert"
 )

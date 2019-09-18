@@ -10,7 +10,7 @@ import (
 
 	"net/url"
 
-	"github.com/Ssawa/LinkLetter/testhelpers"
+	"github.com/cj-dimaggio/LinkLetter/testhelpers"
 	"github.com/stretchr/testify/assert"
 )
 

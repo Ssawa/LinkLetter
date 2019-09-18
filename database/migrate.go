@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Ssawa/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/logger"
 )
 
 // I was at a company once where the CTO yelled at us because we were writing our SQL all throughout

@@ -103,11 +103,11 @@ import (
 
 	"regexp"
 
-	"github.com/Ssawa/LinkLetter/config"
-	"github.com/Ssawa/LinkLetter/logger"
-	"github.com/Ssawa/LinkLetter/web/auth/oauth2"
-	"github.com/Ssawa/LinkLetter/web/handlers"
-	"github.com/Ssawa/LinkLetter/web/template"
+	"github.com/cj-dimaggio/LinkLetter/config"
+	"github.com/cj-dimaggio/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/web/auth/oauth2"
+	"github.com/cj-dimaggio/LinkLetter/web/handlers"
+	"github.com/cj-dimaggio/LinkLetter/web/template"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )

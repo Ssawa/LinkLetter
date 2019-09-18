@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/Ssawa/LinkLetter/web/auth/authentication"
+	"github.com/cj-dimaggio/LinkLetter/web/auth/authentication"
 	"github.com/gorilla/mux"
 )
 

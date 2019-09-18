@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/Ssawa/LinkLetter/config"
-	"github.com/Ssawa/LinkLetter/web/auth/oauth2"
-	"github.com/Ssawa/LinkLetter/web/template"
+	"github.com/cj-dimaggio/LinkLetter/config"
+	"github.com/cj-dimaggio/LinkLetter/web/auth/oauth2"
+	"github.com/cj-dimaggio/LinkLetter/web/template"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )

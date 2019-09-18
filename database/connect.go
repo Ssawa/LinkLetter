@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/Ssawa/LinkLetter/config"
-	"github.com/Ssawa/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/config"
+	"github.com/cj-dimaggio/LinkLetter/logger"
 	_ "github.com/lib/pq" // Makes the postgres driver available
 )
 

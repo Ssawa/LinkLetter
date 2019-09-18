@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Ssawa/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/logger"
 )
 
 // parseFilesWithPaths is almost exactly the same as template.parseFiles with the

@@ -3,7 +3,7 @@ package authentication
 import (
 	"net/http"
 
-	"github.com/Ssawa/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/logger"
 	"github.com/gorilla/sessions"
 )
 

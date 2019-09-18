@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Ssawa/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/logger"
 )
 
 // These are the basic Google APIs we'll be using

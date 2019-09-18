@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/Ssawa/LinkLetter/logger"
+	"github.com/cj-dimaggio/LinkLetter/logger"
 	"github.com/stretchr/testify/assert"
 )
 

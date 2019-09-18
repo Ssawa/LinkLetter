@@ -1,7 +1,7 @@
 package database
 
 import "testing"
-import "github.com/Ssawa/LinkLetter/config"
+import "github.com/cj-dimaggio/LinkLetter/config"
 import "github.com/stretchr/testify/assert"
 
 func TestConfigToDatabaseParams(t *testing.T) {
